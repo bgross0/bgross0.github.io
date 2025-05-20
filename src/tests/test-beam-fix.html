@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Beam Selection Fix</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-case { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .pass { background-color: #e8f5e9; }
+        .fail { background-color: #ffebee; }
+    </style>
+</head>
+<body>
+    <h1>Test Beam Selection with Feet.Inches Conversion</h1>
+    <div id="results"></div>
+
+    <!-- Load dependencies -->
+    <script src="../data/span-tables.js"></script>
+    <script src="../data/materials.js"></script>
+    <script src="../js/engine/validation.js"></script>
+    <script src="../js/engine/utils.js"></script>
+    <script src="../js/engine/beam.js"></script>
+
+    <script>
+        const results = document.getElementById('results');
+
+        function addResult(title, passed, details) {
+            const div = document.createElement('div');
+            div.className = `test-case ${passed ? 'pass' : 'fail'}`;
+            div.innerHTML = `
+                <h3>${title}</h3>
+                <p>Status: ${passed ? 'PASS' : 'FAIL'}</p>
+                <pre>${details}</pre>
+            `;
+            results.appendChild(div);
+        }
+
+        // Test conversion function
+        const testValues = [
+            { input: 6.2, expected: 6.167 },
+            { input: 9.9, expected: 9.75 },
+            { input: 13.7, expected: 13.583 },
+            { input: 16.8, expected: 16.667 }
+        ];
+
+        testValues.forEach(test => {
+            const result = engineUtils.feetInchesToDecimal(test.input);
+            const diff = Math.abs(result - test.expected);
+            addResult(
+                `Convert ${test.input}`,
+                diff < 0.01,
+                `Input: ${test.input}\nExpected: ${test.expected}\nGot: ${result}`
+            );
+        });
+
+        // Test beam selection with problematic case
+        try {
+            const result = selectBeam(16, 15, 'SPF #2');
+            addResult(
+                'Beam Selection: 16\' span, 15\' joist',
+                true,
+                JSON.stringify(result, null, 2)
+            );
+        } catch (error) {
+            addResult(
+                'Beam Selection: 16\' span, 15\' joist',
+                false,
+                `Error: ${error.message}`
+            );
+        }
+
+        // Additional test cases
+        const beamTests = [
+            { beamSpan: 16, joistSpan: 10, species: 'SPF #2' },
+            { beamSpan: 20, joistSpan: 12, species: 'SPF #2' },
+            { beamSpan: 14, joistSpan: 14, species: 'SPF #2' }
+        ];
+
+        beamTests.forEach(test => {
+            try {
+                const result = selectBeam(test.beamSpan, test.joistSpan, test.species);
+                addResult(
+                    `${test.beamSpan}' beam, ${test.joistSpan}' joist`,
+                    true,
+                    `Selected: ${result.size}\nMax span: ${result.span_ft}'`
+                );
+            } catch (error) {
+                addResult(
+                    `${test.beamSpan}' beam, ${test.joistSpan}' joist`,
+                    false,
+                    error.message
+                );
+            }
+        });
+    </script>
+</body>
+</html>

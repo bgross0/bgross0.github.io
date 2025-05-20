@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cantilever Optimization Demo - DeckPro</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .input-group {
+            margin: 10px 0;
+        }
+        label {
+            display: inline-block;
+            width: 150px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 200px;
+            padding: 5px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .results {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .result-card {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+        }
+        .cost-savings {
+            font-size: 24px;
+            color: #28a745;
+            font-weight: bold;
+        }
+        .detail {
+            margin: 5px 0;
+            color: #666;
+        }
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .comparison-table th, .comparison-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .comparison-table th {
+            background-color: #f2f2f2;
+        }
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>DeckPro Cantilever Optimization Demo</h1>
+    
+    <div class="container">
+        <h2>Deck Parameters</h2>
+        <div class="input-group">
+            <label>Deck Width (ft):</label>
+            <input type="number" id="width" value="12" min="6" max="30" step="1">
+        </div>
+        <div class="input-group">
+            <label>Deck Length (ft):</label>
+            <input type="number" id="length" value="16" min="8" max="40" step="1">
+        </div>
+        <div class="input-group">
+            <label>Species/Grade:</label>
+            <select id="species">
+                <option value="SPF #2">SPF #2</option>
+                <option value="DF #1">Douglas Fir #1</option>
+                <option value="HF #2">Hem-Fir #2</option>
+                <option value="SP #2">Southern Pine #2</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>Decking Type:</label>
+            <select id="decking">
+                <option value="composite_1in">Composite 1"</option>
+                <option value="wood_5/4">Wood 5/4"</option>
+                <option value="wood_2x">Wood 2x</option>
+            </select>
+        </div>
+        <button onclick="runOptimization()">Optimize Cantilever</button>
+    </div>
+
+    <div class="container" id="results" style="display: none;">
+        <h2>Optimization Results</h2>
+        <div class="results">
+            <div class="result-card">
+                <h3>Without Cantilever</h3>
+                <div class="detail" id="no-cantilever-joists"></div>
+                <div class="detail" id="no-cantilever-beam"></div>
+                <div class="detail" id="no-cantilever-cost"></div>
+            </div>
+            <div class="result-card">
+                <h3>With Optimized Cantilever</h3>
+                <div class="detail" id="optimized-joists"></div>
+                <div class="detail" id="optimized-beam"></div>
+                <div class="detail" id="optimized-cantilever"></div>
+                <div class="detail" id="optimized-cost"></div>
+            </div>
+        </div>
+        
+        <div class="cost-savings" id="savings"></div>
+        
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Configuration</th>
+                    <th>Joist Size</th>
+                    <th>Joist Span</th>
+                    <th>Cantilever</th>
+                    <th>Beam Size</th>
+                    <th>Post Count</th>
+                    <th>Total Cost</th>
+                </tr>
+            </thead>
+            <tbody id="comparison-body">
+            </tbody>
+        </table>
+        
+        <canvas id="costChart" class="chart-container"></canvas>
+    </div>
+
+    <script>
+        // Include necessary modules
+        const spanTables = {
+            joists: {
+                'SPF #2': {
+                    '2x6': { 12: 10.2, 16: 9.0, 24: 7.7 },
+                    '2x8': { 12: 13.5, 16: 11.10, 24: 10.0 },
+                    '2x10': { 12: 16.8, 16: 15.0, 24: 12.8 },
+                    '2x12': { 12: 20.3, 16: 18.0, 24: 15.4 }
+                },
+                'DF #1': {
+                    '2x6': { 12: 11.11, 16: 10.5, 24: 8.9 },
+                    '2x8': { 12: 15.7, 16: 13.9, 24: 11.7 },
+                    '2x10': { 12: 19.8, 16: 17.6, 24: 14.9 },
+                    '2x12': { 12: 23.11, 16: 21.0, 24: 18.0 }
+                }
+            },
+            beams: {
+                'SPF #2': {
+                    '(2)2x8': { 10: 6.4, 12: 5.3, 14: 4.6, 16: 4.0 },
+                    '(3)2x8': { 10: 7.6, 12: 6.4, 14: 5.5, 16: 4.10 },
+                    '(2)2x10': { 10: 8.3, 12: 6.11, 14: 5.11, 16: 5.2 },
+                    '(3)2x10': { 10: 9.9, 12: 8.2, 14: 7.0, 16: 6.2 }
+                }
+            },
+            deckingSpacing: {
+                'composite_1in': { perpendicular: 16 },
+                'wood_5/4': { perpendicular: 16 },
+                'wood_2x': { perpendicular: 24 }
+            }
+        };
+
+        const materials = {
+            lumber: {
+                '2x6': { costPerFoot: 2.50 },
+                '2x8': { costPerFoot: 3.25 },
+                '2x10': { costPerFoot: 4.50 },
+                '2x12': { costPerFoot: 5.75 }
+            },
+            hardware: {
+                'PB66': { cost: 35.00 }
+            },
+            standardLengths: {
+                '2x6': [8, 10, 12, 14, 16, 20],
+                '2x8': [8, 10, 12, 14, 16, 20],
+                '2x10': [8, 10, 12, 14, 16, 20],
+                '2x12': [8, 10, 12, 14, 16, 20]
+            }
+        };
+
+        function parseSpan(spanStr) {
+            if (typeof spanStr === 'number') return spanStr;
+            const parts = spanStr.toString().split('.');
+            const feet = parseInt(parts[0]);
+            const inches = parts[1] ? parseInt(parts[1]) : 0;
+            return feet + inches / 12;
+        }
+
+        function getStandardLength(size, requiredLength) {
+            const lengths = materials.standardLengths[size] || [8, 10, 12, 14, 16, 20];
+            for (const length of lengths) {
+                if (length >= requiredLength) return length;
+            }
+            return lengths[lengths.length - 1];
+        }
+
+        function calculateJoistConfiguration(width, species, deckingType, cantilever = 0) {
+            const joistTable = spanTables.joists[species];
+            const maxSpacing = spanTables.deckingSpacing[deckingType].perpendicular;
+            const validSpacings = [12, 16, 24].filter(s => s <= maxSpacing);
+            
+            let bestConfig = null;
+            let minCost = Infinity;
+            
+            const backSpan = width - cantilever;
+            
+            for (const spacing of validSpacings) {
+                for (const size of ['2x6', '2x8', '2x10', '2x12']) {
+                    const allowableSpan = parseSpan(joistTable[size][spacing]);
+                    
+                    if (allowableSpan >= backSpan) {
+                        const joistCount = Math.ceil(16 * 12 / spacing) + 1; // Assuming 16' deck length
+                        const totalJoistLength = backSpan + cantilever;
+                        const standardLength = getStandardLength(size, totalJoistLength * 1.05);
+                        const costPerJoist = materials.lumber[size].costPerFoot * standardLength;
+                        const totalCost = joistCount * costPerJoist;
+                        
+                        if (totalCost < minCost) {
+                            minCost = totalCost;
+                            bestConfig = {
+                                size,
+                                spacing,
+                                count: joistCount,
+                                span: backSpan,
+                                cantilever,
+                                totalLength: totalJoistLength,
+                                standardLength,
+                                cost: totalCost
+                            };
+                        }
+                        break;
+                    }
+                }
+            }
+            
+            return bestConfig;
+        }
+
+        function calculateBeamConfiguration(beamSpan, tributaryWidth, species) {
+            const beamTable = spanTables.beams[species];
+            const tableWidths = [10, 12, 14, 16, 18, 20];
+            const tableWidth = tableWidths.find(w => w >= tributaryWidth) || 20;
+            
+            let bestConfig = null;
+            let minCost = Infinity;
+            
+            const beamSizes = ['(2)2x8', '(3)2x8', '(2)2x10', '(3)2x10'];
+            
+            for (const size of beamSizes) {
+                if (!beamTable[size] || !beamTable[size][tableWidth]) continue;
+                
+                const allowableSpan = parseSpan(beamTable[size][tableWidth]);
+                
+                if (allowableSpan >= beamSpan) {
+                    const match = size.match(/\((\d+)\)(\d+x\d+)/);
+                    const plyCount = parseInt(match[1]);
+                    const dimension = match[2];
+                    
+                    const postSpacing = Math.min(allowableSpan, beamSpan / Math.ceil(beamSpan / allowableSpan));
+                    const postCount = Math.ceil(beamSpan / postSpacing) + 1;
+                    
+                    const standardLength = getStandardLength(dimension, beamSpan * 1.05);
+                    const beamCost = plyCount * standardLength * materials.lumber[dimension].costPerFoot;
+                    const postCost = postCount * materials.hardware.PB66.cost;
+                    const totalCost = beamCost + postCost;
+                    
+                    if (totalCost < minCost) {
+                        minCost = totalCost;
+                        bestConfig = {
+                            size,
+                            plyCount,
+                            dimension,
+                            postSpacing,
+                            postCount,
+                            span: beamSpan,
+                            tributaryWidth,
+                            cost: totalCost
+                        };
+                    }
+                }
+            }
+            
+            return bestConfig;
+        }
+
+        function optimizeCantilever(width, length, species, deckingType) {
+            let bestConfig = null;
+            let minTotalCost = Infinity;
+            const configurations = [];
+            
+            const maxCantilever = width / 5;
+            
+            for (let cantilever = 0; cantilever <= maxCantilever; cantilever += 0.5) {
+                const backSpan = width - cantilever;
+                
+                if (cantilever > backSpan / 4) continue;
+                
+                const joistConfig = calculateJoistConfiguration(width, species, deckingType, cantilever);
+                if (!joistConfig) continue;
+                
+                const beamConfig = calculateBeamConfiguration(length, backSpan, species);
+                if (!beamConfig) continue;
+                
+                const totalCost = joistConfig.cost + beamConfig.cost;
+                
+                configurations.push({
+                    cantilever,
+                    backSpan,
+                    joistConfig,
+                    beamConfig,
+                    totalCost
+                });
+                
+                if (totalCost < minTotalCost) {
+                    minTotalCost = totalCost;
+                    bestConfig = {
+                        cantilever,
+                        backSpan,
+                        joistConfig,
+                        beamConfig,
+                        totalCost
+                    };
+                }
+            }
+            
+            return { bestConfig, configurations };
+        }
+
+        function runOptimization() {
+            const width = parseFloat(document.getElementById('width').value);
+            const length = parseFloat(document.getElementById('length').value);
+            const species = document.getElementById('species').value;
+            const deckingType = document.getElementById('decking').value;
+            
+            // Calculate without cantilever
+            const noCantilever = calculateJoistConfiguration(width, species, deckingType, 0);
+            const noCantileverBeam = calculateBeamConfiguration(length, width, species);
+            const noCantileverTotal = noCantilever.cost + noCantileverBeam.cost;
+            
+            // Optimize cantilever
+            const { bestConfig, configurations } = optimizeCantilever(width, length, species, deckingType);
+            
+            // Display results
+            document.getElementById('no-cantilever-joists').textContent = 
+                `Joists: ${noCantilever.size} @ ${noCantilever.spacing}" o.c.`;
+            document.getElementById('no-cantilever-beam').textContent = 
+                `Beam: ${noCantileverBeam.size}`;
+            document.getElementById('no-cantilever-cost').textContent = 
+                `Total Cost: $${noCantileverTotal.toFixed(2)}`;
+            
+            document.getElementById('optimized-joists').textContent = 
+                `Joists: ${bestConfig.joistConfig.size} @ ${bestConfig.joistConfig.spacing}" o.c.`;
+            document.getElementById('optimized-beam').textContent = 
+                `Beam: ${bestConfig.beamConfig.size}`;
+            document.getElementById('optimized-cantilever').textContent = 
+                `Cantilever: ${bestConfig.cantilever.toFixed(1)} ft`;
+            document.getElementById('optimized-cost').textContent = 
+                `Total Cost: $${bestConfig.totalCost.toFixed(2)}`;
+            
+            const savings = noCantileverTotal - bestConfig.totalCost;
+            const savingsPercent = (savings / noCantileverTotal * 100).toFixed(1);
+            document.getElementById('savings').textContent = 
+                `Savings: $${savings.toFixed(2)} (${savingsPercent}%)`;
+            
+            // Create comparison table
+            const tbody = document.getElementById('comparison-body');
+            tbody.innerHTML = '';
+            
+            configurations.forEach(config => {
+                const row = tbody.insertRow();
+                row.insertCell(0).textContent = config.cantilever === 0 ? 'No cantilever' : 
+                    `${config.cantilever.toFixed(1)} ft cantilever`;
+                row.insertCell(1).textContent = config.joistConfig.size;
+                row.insertCell(2).textContent = `${config.backSpan.toFixed(1)} ft`;
+                row.insertCell(3).textContent = `${config.cantilever.toFixed(1)} ft`;
+                row.insertCell(4).textContent = config.beamConfig.size;
+                row.insertCell(5).textContent = config.beamConfig.postCount;
+                row.insertCell(6).textContent = `$${config.totalCost.toFixed(2)}`;
+                
+                if (config === bestConfig) {
+                    row.style.backgroundColor = '#d4edda';
+                    row.style.fontWeight = 'bold';
+                }
+            });
+            
+            document.getElementById('results').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

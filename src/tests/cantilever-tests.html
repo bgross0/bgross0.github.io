@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cantilever Optimization Tests</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+        .pass { background-color: #e8f5e9; }
+        .fail { background-color: #ffebee; }
+        .title { font-weight: bold; margin-bottom: 10px; }
+        .result { margin: 5px 0; }
+        .summary { margin: 20px 0; font-size: 18px; font-weight: bold; }
+        table { border-collapse: collapse; margin: 10px 0; }
+        td, th { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>Cantilever Optimization Test Suite</h1>
+    <div id="test-results"></div>
+    <div id="summary"></div>
+
+    <!-- Load dependencies -->
+    <script src="../data/span-tables.js"></script>
+    <script src="../data/materials.js"></script>
+    <script src="../js/engine/validation.js"></script>
+    <script src="../js/engine/beam.js"></script>
+    <script src="../js/engine/cantilever-optimizer.js"></script>
+    <script src="../js/engine/joist.js"></script>
+    <script src="../js/engine/index.js"></script>
+
+    <script>
+        // Test cases
+        const testCases = [
+            // Basic cases
+            {
+                name: "10x10 deck - should have minimal or no cantilever",
+                input: {
+                    width_ft: 10,
+                    length_ft: 10,
+                    height_ft: 3,
+                    attachment: 'ledger',
+                    beam_style_outer: 'drop',
+                    footing_type: 'helical',
+                    species_grade: 'SPF #2',
+                    decking_type: 'composite_1in',
+                    optimization_goal: 'cost'
+                },
+                expected: {
+                    cantilever_ft: 0,  // Small deck shouldn't need cantilever
+                    joist_size: '2x8'  // Should be able to span 10' with 2x8
+                }
+            },
+            {
+                name: "14x16 deck - should optimize with cantilever",
+                input: {
+                    width_ft: 14,
+                    length_ft: 16,
+                    height_ft: 3,
+                    attachment: 'ledger',
+                    beam_style_outer: 'drop',
+                    footing_type: 'helical',
+                    species_grade: 'SPF #2',
+                    decking_type: 'composite_1in',
+                    optimization_goal: 'cost'
+                },
+                expected: {
+                    cantilever_min: 0.5,
+                    cantilever_max: 2.8,  // 14/5 = 2.8 max per IRC
+                    joist_size_options: ['2x8', '2x10']
+                }
+            },
+            {
+                name: "20x24 large deck - maximize cantilever benefit",
+                input: {
+                    width_ft: 20,
+                    length_ft: 24,
+                    height_ft: 4,
+                    attachment: 'ledger',
+                    beam_style_outer: 'drop',
+                    footing_type: 'helical',
+                    species_grade: 'SPF #2',
+                    decking_type: 'composite_1in',
+                    optimization_goal: 'cost'
+                },
+                expected: {
+                    cantilever_min: 2,
+                    cantilever_max: 4,  // 20/5 = 4 max
+                    joist_size_options: ['2x10', '2x12']
+                }
+            },
+            
+            // Edge cases
+            {
+                name: "Inline beam - no cantilever allowed",
+                input: {
+                    width_ft: 12,
+                    length_ft: 16,
+                    height_ft: 2.5,
+                    attachment: 'free',
+                    beam_style_outer: 'inline',
+                    beam_style_inner: 'inline',
+                    footing_type: 'surface',
+                    species_grade: 'SPF #2',
+                    decking_type: 'composite_1in',
+                    optimization_goal: 'cost'
+                },
+                expected: {
+                    cantilever_ft: 0,
+                    joist_size: '2x10'  // Must span full 12'
+                }
+            },
+            {
+                name: "Strength optimization - may prefer less cantilever",
+                input: {
+                    width_ft: 16,
+                    length_ft: 20,
+                    height_ft: 3,
+                    attachment: 'ledger',
+                    beam_style_outer: 'drop',
+                    footing_type: 'helical',
+                    species_grade: 'SPF #2',
+                    decking_type: 'composite_1in',
+                    optimization_goal: 'strength'
+                },
+                expected: {
+                    cantilever_max: 3.2,  // Still respects IRC limit
+                    reserve_capacity_min: 1.0
+                }
+            },
+            {
+                name: "2x decking - limits joist spacing",
+                input: {
+                    width_ft: 12,
+                    length_ft: 14,
+                    height_ft: 3,
+                    attachment: 'ledger',
+                    beam_style_outer: 'drop',
+                    footing_type: 'concrete',
+                    species_grade: 'SPF #2',
+                    decking_type: 'wood_2x',
+                    optimization_goal: 'cost'
+                },
+                expected: {
+                    max_joist_spacing: 16,  // 2x decking limits to 16"
+                    cantilever_min: 0
+                }
+            },
+            {
+                name: "Forced joist spacing - respects user choice",
+                input: {
+                    width_ft: 12,
+                    length_ft: 12,
+                    height_ft: 3,
+                    attachment: 'ledger',
+                    beam_style_outer: 'drop',
+                    footing_type: 'helical',
+                    species_grade: 'SPF #2',
+                    forced_joist_spacing_in: 12,
+                    decking_type: 'composite_1in',
+                    optimization_goal: 'cost'
+                },
+                expected: {
+                    joist_spacing_in: 12,
+                    cantilever_max: 2.4
+                }
+            },
+            {
+                name: "Different species - DF #1 stronger wood",
+                input: {
+                    width_ft: 16,
+                    length_ft: 18,
+                    height_ft: 3,
+                    attachment: 'ledger',
+                    beam_style_outer: 'drop',
+                    footing_type: 'helical',
+                    species_grade: 'DF #1',
+                    decking_type: 'composite_1in',
+                    optimization_goal: 'cost'
+                },
+                expected: {
+                    joist_size_options: ['2x8', '2x10'],  // Stronger wood = smaller sizes
+                    cantilever_min: 0
+                }
+            }
+        ];
+
+        // Run tests
+        let passCount = 0;
+        let failCount = 0;
+        const resultsDiv = document.getElementById('test-results');
+
+        testCases.forEach(test => {
+            try {
+                // Run the structure calculation
+                const result = computeStructure(test.input);
+                
+                // Check results
+                let passed = true;
+                let details = [];
+                
+                // Check cantilever
+                if (test.expected.cantilever_ft !== undefined) {
+                    if (result.joists.cantilever_ft !== test.expected.cantilever_ft) {
+                        passed = false;
+                        details.push(`Expected cantilever: ${test.expected.cantilever_ft}', got: ${result.joists.cantilever_ft}'`);
+                    }
+                }
+                
+                if (test.expected.cantilever_min !== undefined) {
+                    if (result.joists.cantilever_ft < test.expected.cantilever_min) {
+                        passed = false;
+                        details.push(`Expected cantilever >= ${test.expected.cantilever_min}', got: ${result.joists.cantilever_ft}'`);
+                    }
+                }
+                
+                if (test.expected.cantilever_max !== undefined) {
+                    if (result.joists.cantilever_ft > test.expected.cantilever_max) {
+                        passed = false;
+                        details.push(`Expected cantilever <= ${test.expected.cantilever_max}', got: ${result.joists.cantilever_ft}'`);
+                    }
+                }
+                
+                // Check joist size
+                if (test.expected.joist_size !== undefined) {
+                    if (result.joists.size !== test.expected.joist_size) {
+                        passed = false;
+                        details.push(`Expected joist size: ${test.expected.joist_size}, got: ${result.joists.size}`);
+                    }
+                }
+                
+                if (test.expected.joist_size_options !== undefined) {
+                    if (!test.expected.joist_size_options.includes(result.joists.size)) {
+                        passed = false;
+                        details.push(`Expected joist size in [${test.expected.joist_size_options.join(', ')}], got: ${result.joists.size}`);
+                    }
+                }
+                
+                // Check joist spacing
+                if (test.expected.joist_spacing_in !== undefined) {
+                    if (result.joists.spacing_in !== test.expected.joist_spacing_in) {
+                        passed = false;
+                        details.push(`Expected spacing: ${test.expected.joist_spacing_in}", got: ${result.joists.spacing_in}"`);
+                    }
+                }
+                
+                if (test.expected.max_joist_spacing !== undefined) {
+                    if (result.joists.spacing_in > test.expected.max_joist_spacing) {
+                        passed = false;
+                        details.push(`Expected spacing <= ${test.expected.max_joist_spacing}", got: ${result.joists.spacing_in}"`);
+                    }
+                }
+                
+                // Create result HTML
+                const testDiv = document.createElement('div');
+                testDiv.className = `test ${passed ? 'pass' : 'fail'}`;
+                
+                let html = `<div class="title">${test.name}</div>`;
+                html += `<div class="result">Status: ${passed ? 'PASS' : 'FAIL'}</div>`;
+                
+                // Show actual results
+                html += '<table>';
+                html += '<tr><th>Property</th><th>Value</th></tr>';
+                html += `<tr><td>Deck Size</td><td>${test.input.width_ft}' x ${test.input.length_ft}'</td></tr>`;
+                html += `<tr><td>Cantilever</td><td>${result.joists.cantilever_ft}'</td></tr>`;
+                html += `<tr><td>Back-span</td><td>${result.joists.span_ft || (test.input.width_ft - result.joists.cantilever_ft)}'</td></tr>`;
+                html += `<tr><td>Joist Size</td><td>${result.joists.size}</td></tr>`;
+                html += `<tr><td>Joist Spacing</td><td>${result.joists.spacing_in}"</td></tr>`;
+                html += `<tr><td>Beam Size</td><td>${result.beams[0].size}</td></tr>`;
+                
+                // Add cost information
+                if (result.metrics.total_board_ft) {
+                    html += `<tr><td>Total Board Feet</td><td>${result.metrics.total_board_ft}</td></tr>`;
+                }
+                
+                html += '</table>';
+                
+                if (!passed) {
+                    html += '<div class="result">Issues:</div>';
+                    html += '<ul>';
+                    details.forEach(detail => {
+                        html += `<li>${detail}</li>`;
+                    });
+                    html += '</ul>';
+                }
+                
+                testDiv.innerHTML = html;
+                resultsDiv.appendChild(testDiv);
+                
+                if (passed) passCount++;
+                else failCount++;
+                
+            } catch (error) {
+                failCount++;
+                const testDiv = document.createElement('div');
+                testDiv.className = 'test fail';
+                testDiv.innerHTML = `
+                    <div class="title">${test.name}</div>
+                    <div class="result">Status: ERROR</div>
+                    <div class="result">Error: ${error.message}</div>
+                `;
+                resultsDiv.appendChild(testDiv);
+            }
+        });
+        
+        // Show summary
+        const summaryDiv = document.getElementById('summary');
+        summaryDiv.className = 'summary';
+        summaryDiv.innerHTML = `Test Results: ${passCount} passed, ${failCount} failed`;
+        if (failCount === 0) {
+            summaryDiv.style.color = 'green';
+        } else {
+            summaryDiv.style.color = 'red';
+        }
+    </script>
+</body>
+</html>

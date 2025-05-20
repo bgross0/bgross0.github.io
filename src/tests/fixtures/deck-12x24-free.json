@@ -1,0 +1,36 @@
+{
+  "description": "Freestanding deck - 12x24",
+  "input": {
+    "width_ft": 12,
+    "length_ft": 24,
+    "height_ft": 4,
+    "attachment": "free",
+    "beam_style_outer": null,
+    "beam_style_inner": null,
+    "footing_type": "concrete",
+    "species_grade": "DF #1",
+    "forced_joist_spacing_in": null,
+    "decking_type": "wood_5/4",
+    "optimization_goal": "strength"
+  },
+  "expected": {
+    "joists": {
+      "size": "2x10",
+      "spacing_in": 16,
+      "cantilever_ft": 2
+    },
+    "beams": [
+      {
+        "position": "outer",
+        "style": "drop",
+        "post_count": 5
+      },
+      {
+        "position": "inner",
+        "style": "drop",
+        "post_count": 5
+      }
+    ],
+    "posts": 10
+  }
+}

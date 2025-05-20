@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Attachment Value</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-case { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Test Attachment Value Processing</h1>
+    
+    <select id="attachment">
+        <option value="ledger">Ledger</option>
+        <option value="free">Freestanding</option>
+    </select>
+    
+    <button id="test-btn">Test Compute</button>
+    
+    <div id="results"></div>
+
+    <!-- Load dependencies -->
+    <script src="../data/span-tables.js"></script>
+    <script src="../data/materials.js"></script>
+    <script src="../js/engine/validation.js"></script>
+    <script src="../js/engine/utils.js"></script>
+    <script src="../js/engine/cantilever-optimizer.js"></script>
+    <script src="../js/engine/joist.js"></script>
+    <script src="../js/engine/beam.js"></script>
+    <script src="../js/engine/post.js"></script>
+    <script src="../js/engine/index.js"></script>
+
+    <script>
+        const results = document.getElementById('results');
+        
+        document.getElementById('test-btn').addEventListener('click', () => {
+            const attachment = document.getElementById('attachment').value;
+            
+            const payload = {
+                width_ft: 12,
+                length_ft: 16,
+                height_ft: 4,
+                attachment: attachment,
+                footing_type: 'concrete',
+                species_grade: 'SPF #2',
+                decking_type: '5_4_decking',
+                optimization_goal: 'cost'
+            };
+            
+            let html = `<h2>Test with attachment: ${attachment}</h2>`;
+            html += `<pre>Input: ${JSON.stringify(payload, null, 2)}</pre>`;
+            
+            try {
+                const result = computeStructure(payload);
+                
+                html += `<div class="test-case">`;
+                html += `<h3>Result - ${result.beams.length} beams</h3>`;
+                html += `<pre>Beams: ${JSON.stringify(result.beams, null, 2)}</pre>`;
+                html += `</div>`;
+                
+                // Check console output
+                const logs = [];
+                const originalLog = console.log;
+                console.log = function() {
+                    logs.push(Array.from(arguments).join(' '));
+                    originalLog.apply(console, arguments);
+                };
+                
+                // Run again to capture logs
+                computeStructure(payload);
+                
+                // Restore console
+                console.log = originalLog;
+                
+                html += `<div class="test-case">`;
+                html += `<h3>Console Logs</h3>`;
+                html += `<pre>${logs.join('\n')}</pre>`;
+                html += `</div>`;
+                
+            } catch (error) {
+                html += `<div class="test-case">`;
+                html += `<h3>Error</h3>`;
+                html += `<pre>${error.message}\n${error.stack}</pre>`;
+                html += `</div>`;
+            }
+            
+            results.innerHTML = html;
+        });
+        
+        // Automatically test both cases
+        document.getElementById('attachment').value = 'free';
+        document.getElementById('test-btn').click();
+    </script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cost Optimization Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .test-case {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .result {
+            background: #f0f0f0;
+            padding: 10px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>DeckPro Cost Optimization Demo</h1>
+    
+    <div class="test-case">
+        <h2>Test 1: Expensive Footings ($500 helical)</h2>
+        <p>Should prefer stronger beams with fewer posts</p>
+        <div id="test1-result" class="result">Loading...</div>
+    </div>
+    
+    <div class="test-case">
+        <h2>Test 2: Cheap Footings ($75 surface)</h2>
+        <p>May allow more posts if total cost is lower</p>
+        <div id="test2-result" class="result">Loading...</div>
+    </div>
+    
+    <div class="test-case">
+        <h2>Test 3: Modified Material Prices</h2>
+        <p>Increase 2x12 price to $20/ft and see if optimization adjusts</p>
+        <div id="test3-result" class="result">Loading...</div>
+    </div>
+    
+    <!-- Load all required scripts -->
+    <script src="../src/data/materials.js"></script>
+    <script src="../src/data/span-tables.js"></script>
+    <script src="../src/js/engine/materials.js"></script>
+    <script src="../src/js/engine/validation.js"></script>
+    <script src="../src/js/engine/utils.js"></script>
+    <script src="../src/js/engine/joist.js"></script>
+    <script src="../src/js/engine/beam.js"></script>
+    <script src="../src/js/engine/post.js"></script>
+    <script src="../src/js/engine/cantilever-optimizer.js"></script>
+    <script src="../src/js/engine/index.js"></script>
+    
+    <script>
+        // Test 1: Expensive footings
+        const test1Payload = {
+            width_ft: 12,
+            length_ft: 20,
+            height_ft: 6,
+            attachment: 'ledger',
+            footing_type: 'helical',
+            species_grade: 'SPF #2',
+            decking_type: '5_4_decking',
+            optimization_goal: 'cost'
+        };
+        
+        try {
+            const result1 = computeStructure(test1Payload);
+            const beam1 = result1.beams.find(b => b.position === 'outer');
+            const posts1 = result1.posts.length;
+            const takeoff1 = result1.material_takeoff;
+            
+            document.getElementById('test1-result').textContent = 
+                `Beam Configuration: ${beam1.size}
+Post Count: ${posts1}
+Post Spacing: ${beam1.post_spacing_ft} ft
+Material Takeoff:
+${takeoff1.map(item => `  ${item.item}: ${item.qty}`).join('\n')}`;
+        } catch (error) {
+            document.getElementById('test1-result').textContent = 'Error: ' + error.message;
+        }
+        
+        // Test 2: Cheap footings
+        const test2Payload = {
+            ...test1Payload,
+            footing_type: 'surface'
+        };
+        
+        try {
+            const result2 = computeStructure(test2Payload);
+            const beam2 = result2.beams.find(b => b.position === 'outer');
+            const posts2 = result2.posts.length;
+            
+            document.getElementById('test2-result').textContent = 
+                `Beam Configuration: ${beam2.size}
+Post Count: ${posts2}
+Post Spacing: ${beam2.post_spacing_ft} ft
+Cost Difference: Surface footings save $${(500-75)*posts2} on footings`;
+        } catch (error) {
+            document.getElementById('test2-result').textContent = 'Error: ' + error.message;
+        }
+        
+        // Test 3: Modified prices
+        // Save original price
+        const original2x12Price = materials.lumber['2x12'].costPerFoot;
+        materials.lumber['2x12'].costPerFoot = 20.00;
+        
+        try {
+            const result3 = computeStructure(test1Payload);
+            const beam3 = result3.beams.find(b => b.position === 'outer');
+            const posts3 = result3.posts.length;
+            
+            document.getElementById('test3-result').textContent = 
+                `With 2x12 at $20/ft:
+Beam Configuration: ${beam3.size}
+Post Count: ${posts3}
+Note: Higher lumber prices may shift optimization toward smaller beams with more posts`;
+        } catch (error) {
+            document.getElementById('test3-result').textContent = 'Error: ' + error.message;
+        } finally {
+            // Restore original price
+            materials.lumber['2x12'].costPerFoot = original2x12Price;
+        }
+    </script>
+</body>
+</html>

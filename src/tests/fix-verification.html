@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fix Verification</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status { margin: 10px 0; padding: 10px; }
+        .pass { background-color: #e8f5e9; }
+        .fail { background-color: #ffebee; }
+    </style>
+</head>
+<body>
+    <h1>Fix Verification Test</h1>
+    <div id="results"></div>
+
+    <!-- Load dependencies in correct order -->
+    <script src="../data/span-tables.js"></script>
+    <script src="../data/materials.js"></script>
+    <script src="../js/engine/validation.js"></script>
+    <script src="../js/engine/joist.js"></script>
+    <script src="../js/engine/beam.js"></script>
+    <script src="../js/engine/post.js"></script>
+    <script src="../js/engine/materials.js"></script>
+    <script src="../js/engine/cantilever-optimizer.js"></script>
+    <script src="../js/engine/index.js"></script>
+
+    <script>
+        const results = document.getElementById('results');
+
+        function addResult(test, status, details) {
+            const div = document.createElement('div');
+            div.className = `status ${status ? 'pass' : 'fail'}`;
+            div.innerHTML = `<strong>${test}:</strong> ${status ? 'PASS' : 'FAIL'}<br>${details}`;
+            results.appendChild(div);
+        }
+
+        // Test 1: Check if materials.getStockLength exists
+        const hasGetStockLength = typeof materials.getStockLength === 'function';
+        addResult('materials.getStockLength exists', hasGetStockLength, 
+            hasGetStockLength ? 'Function is available' : 'Function is missing');
+
+        // Test 2: Test getStockLength function
+        try {
+            const stockLength = materials.getStockLength(9.5, '2x10');
+            addResult('materials.getStockLength works', true, 
+                `Required: 9.5', Got stock length: ${stockLength}'`);
+        } catch (e) {
+            addResult('materials.getStockLength works', false, `Error: ${e.message}`);
+        }
+
+        // Test 3: Check if cantileverOptimizer exists
+        const hasOptimizer = typeof cantileverOptimizer !== 'undefined';
+        addResult('cantileverOptimizer exists', hasOptimizer, 
+            hasOptimizer ? 'Optimizer is available' : 'Optimizer is missing');
+
+        // Test 4: Test the full computation
+        try {
+            const result = computeStructure({
+                width_ft: 10,
+                length_ft: 10,
+                height_ft: 3,
+                attachment: 'ledger',
+                footing_type: 'helical',
+                species_grade: 'SPF #2',
+                decking_type: 'composite_1in',
+                optimization_goal: 'cost'
+            });
+            
+            addResult('Full computation works', true, 
+                `Result: ${result.joists.size} joists with ${result.joists.cantilever_ft}' cantilever`);
+        } catch (e) {
+            addResult('Full computation works', false, 
+                `Error: ${e.message}<br>Stack: ${e.stack}`);
+        }
+
+        // Summary
+        const summary = document.createElement('div');
+        summary.style.marginTop = '20px';
+        summary.style.fontWeight = 'bold';
+        summary.innerHTML = '<h2>Summary</h2>';
+        
+        const issues = [];
+        if (!hasGetStockLength) issues.push('materials.getStockLength is missing');
+        if (!hasOptimizer) issues.push('cantileverOptimizer is not loaded');
+        
+        if (issues.length === 0) {
+            summary.innerHTML += '<p style="color: green;">All issues resolved! The error should be fixed.</p>';
+        } else {
+            summary.innerHTML += '<p style="color: red;">Issues remaining:</p><ul>';
+            issues.forEach(issue => {
+                summary.innerHTML += `<li>${issue}</li>`;
+            });
+            summary.innerHTML += '</ul>';
+        }
+        
+        results.appendChild(summary);
+    </script>
+</body>
+</html>

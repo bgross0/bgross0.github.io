@@ -1,0 +1,35 @@
+{
+  "description": "Standard deck with ledger - 8x12",
+  "input": {
+    "width_ft": 8,
+    "length_ft": 12,
+    "height_ft": 3,
+    "attachment": "ledger",
+    "beam_style_outer": null,
+    "beam_style_inner": null,
+    "footing_type": "helical",
+    "species_grade": "SPF #2",
+    "forced_joist_spacing_in": null,
+    "decking_type": "composite_1in",
+    "optimization_goal": "cost"
+  },
+  "expected": {
+    "joists": {
+      "size": "2x8",
+      "spacing_in": 16,
+      "cantilever_ft": 1.5
+    },
+    "beams": [
+      {
+        "position": "outer",
+        "style": "drop",
+        "post_count": 3
+      },
+      {
+        "position": "inner",
+        "style": "ledger"
+      }
+    ],
+    "posts": 3
+  }
+}

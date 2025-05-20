@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Verify IRC Table Interpretation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .note { background-color: #fffde7; padding: 15px; margin: 10px 0; }
+        table { border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>IRC Table R507.5 Interpretation</h1>
+    
+    <div class="note">
+        <h3>Understanding IRC Table R507.5</h3>
+        <p>The IRC Table R507.5 shows allowable beam spans based on joist span (tributary width).</p>
+        <p>Format: For a given joist span (6-20 ft) and beam configuration, the table gives the maximum beam span allowed.</p>
+        <p>Example: SPF #2, (3)2x10 beam, 10' joist span = 9.9' max beam span</p>
+    </div>
+
+    <div id="problem"></div>
+    <div id="solution"></div>
+
+    <script src="../data/span-tables.js"></script>
+    
+    <script>
+        // Check what the current table contains
+        const beamTable = spanTables.beams['SPF #2'];
+        const beamSize = '(3)2x10';
+        const joistSpan16 = beamTable[beamSize][16];
+        
+        document.getElementById('problem').innerHTML = `
+            <h3>Current Problem</h3>
+            <p>For SPF #2, ${beamSize} beam with 16' joist span:</p>
+            <p>Table shows max beam span = ${joistSpan16}'</p>
+            <p>This seems incorrect - a triple 2x10 should be able to span more than ${joistSpan16}' when supporting 16' joists.</p>
+            
+            <h3>Sample Table Values</h3>
+            <table>
+                <tr>
+                    <th>Beam Size</th>
+                    <th>6' Joist Span</th>
+                    <th>10' Joist Span</th>
+                    <th>16' Joist Span</th>
+                    <th>20' Joist Span</th>
+                </tr>
+                <tr>
+                    <td>(3)2x10</td>
+                    <td>${beamTable['(3)2x10'][6]}'</td>
+                    <td>${beamTable['(3)2x10'][10]}'</td>
+                    <td>${beamTable['(3)2x10'][16]}'</td>
+                    <td>${beamTable['(3)2x10'][20]}'</td>
+                </tr>
+                <tr>
+                    <td>(3)2x12</td>
+                    <td>${beamTable['(3)2x12'][6]}'</td>
+                    <td>${beamTable['(3)2x12'][10]}'</td>
+                    <td>${beamTable['(3)2x12'][16]}'</td>
+                    <td>${beamTable['(3)2x12'][20]}'</td>
+                </tr>
+            </table>
+            
+            <p><strong>Issue:</strong> The values appear to be in feet.inches format (e.g., 6.2 means 6'-2", not 6.2')</p>
+        `;
+        
+        // Show corrected interpretation
+        document.getElementById('solution').innerHTML = `
+            <h3>Corrected Interpretation</h3>
+            <p>The table values are in feet-inches format:</p>
+            <ul>
+                <li>6.2 = 6 feet 2 inches = 6.167 feet</li>
+                <li>9.9 = 9 feet 9 inches = 9.75 feet</li>
+                <li>13.7 = 13 feet 7 inches = 13.583 feet</li>
+            </ul>
+            
+            <h3>Conversion Function Needed</h3>
+            <pre>
+function feetInchesToDecimal(value) {
+    const parts = value.toString().split('.');
+    const feet = parseInt(parts[0]);
+    const inches = parts[1] ? parseInt(parts[1]) : 0;
+    return feet + (inches / 12);
+}
+            </pre>
+        `;
+    </script>
+</body>
+</html>

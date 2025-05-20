@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Freestanding Deck Beams</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-case { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .pass { background-color: #e8f5e9; }
+        .fail { background-color: #ffebee; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Test Freestanding Deck Beam Generation</h1>
+    <div id="results"></div>
+
+    <!-- Load dependencies -->
+    <script src="../data/span-tables.js"></script>
+    <script src="../data/materials.js"></script>
+    <script src="../js/engine/validation.js"></script>
+    <script src="../js/engine/utils.js"></script>
+    <script src="../js/engine/beam.js"></script>
+    <script src="../js/engine/joist.js"></script>
+    <script src="../js/engine/post.js"></script>
+    <script src="../js/engine/index.js"></script>
+
+    <script>
+        const results = document.getElementById('results');
+        
+        // Test freestanding deck
+        const payload = {
+            length_ft: 16,
+            width_ft: 12,
+            height_ft: 4,
+            attachment: 'free',
+            footing_type: 'concrete',
+            species_grade: 'SPF #2',
+            decking_type: '5_4_decking',
+            optimization_goal: 'cost'
+        };
+        
+        let html = '<h2>Test: 12x16 Freestanding Deck</h2>';
+        
+        try {
+            console.log('Input payload:', payload);
+            const result = computeStructure(payload);
+            console.log('Full result:', result);
+            
+            html += `
+                <div class="test-case">
+                    <h3>Engine Output</h3>
+                    <h4>Beams (${result.beams.length} beams):</h4>
+                    <pre>${JSON.stringify(result.beams, null, 2)}</pre>
+                </div>
+            `;
+            
+            // Check beam count
+            if (result.beams.length === 2) {
+                html += '<div class="test-case pass"><p>✓ Correct: 2 beams generated for freestanding deck</p></div>';
+            } else {
+                html += '<div class="test-case fail"><p>✗ Error: Freestanding deck should have 2 beams, but has ' + result.beams.length + '</p></div>';
+            }
+            
+            // Check beam positions
+            const innerBeam = result.beams.find(b => b.position === 'inner');
+            const outerBeam = result.beams.find(b => b.position === 'outer');
+            
+            if (innerBeam && outerBeam) {
+                html += '<div class="test-case pass"><p>✓ Both inner and outer beams present</p></div>';
+            } else {
+                html += '<div class="test-case fail"><p>✗ Missing beam: ';
+                if (!innerBeam) html += 'inner beam not found ';
+                if (!outerBeam) html += 'outer beam not found';
+                html += '</p></div>';
+            }
+            
+            // Debug the beam generation process
+            html += `
+                <div class="test-case">
+                    <h3>Debug Info</h3>
+                    <p>Attachment: ${payload.attachment}</p>
+                    <p>Should generate inner beam: ${payload.attachment !== 'ledger'}</p>
+                </div>
+            `;
+            
+        } catch (error) {
+            html += `
+                <div class="test-case fail">
+                    <h3>Error</h3>
+                    <p>${error.message}</p>
+                    <pre>${error.stack}</pre>
+                </div>
+            `;
+        }
+        
+        results.innerHTML = html;
+    </script>
+</body>
+</html>

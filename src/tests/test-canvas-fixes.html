@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Canvas Fixes</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-case { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .pass { background-color: #e8f5e9; }
+        .fail { background-color: #ffebee; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Test Canvas Output Fixes</h1>
+    <div id="results"></div>
+
+    <!-- Load dependencies -->
+    <script src="../data/span-tables.js"></script>
+    <script src="../data/materials.js"></script>
+    <script src="../js/engine/validation.js"></script>
+    <script src="../js/engine/utils.js"></script>
+    <script src="../js/engine/beam.js"></script>
+    <script src="../js/engine/joist.js"></script>
+    <script src="../js/engine/post.js"></script>
+    <script src="../js/engine/index.js"></script>
+
+    <script>
+        const results = document.getElementById('results');
+        
+        // Test 1: 10x20 deck (which was failing)
+        const payload1 = {
+            length_ft: 20,
+            width_ft: 10,
+            height_ft: 4,
+            attachment: 'ledger',
+            footing_type: 'concrete',
+            species_grade: 'SPF #2',
+            decking_type: '5_4_decking',
+            optimization_goal: 'cost'
+        };
+        
+        let html = '<h2>Test 1: 10x20 Deck (ledger attachment)</h2>';
+        
+        try {
+            const result = computeStructure(payload1);
+            html += `
+                <div class="test-case pass">
+                    <h3>Success</h3>
+                    <h4>Joists:</h4>
+                    <pre>${JSON.stringify(result.joists, null, 2)}</pre>
+                    <h4>Beams:</h4>
+                    <pre>${JSON.stringify(result.beams, null, 2)}</pre>
+                    <h4>Posts:</h4>
+                    <pre>${JSON.stringify(result.posts, null, 2)}</pre>
+                    <h4>Compliance:</h4>
+                    <pre>${JSON.stringify(result.compliance, null, 2)}</pre>
+                </div>
+            `;
+            
+            // Verify joists are correct
+            if (result.joists.orientation === 'width' && result.joists.span_ft <= 10) {
+                html += '<div class="test-case pass"><p>✓ Joists span the shorter dimension (10\') correctly</p></div>';
+            } else {
+                html += '<div class="test-case fail"><p>✗ Joists not spanning correctly</p></div>';
+            }
+            
+            // Verify beams run along longer dimension
+            const outerBeam = result.beams.find(b => b.position === 'outer');
+            if (outerBeam && outerBeam.spliced) {
+                html += '<div class="test-case pass"><p>✓ Beams correctly spliced for 20\' span</p></div>';
+            } else if (outerBeam) {
+                html += '<div class="test-case fail"><p>✗ Beams should be spliced for 20\' span</p></div>';
+            }
+            
+        } catch (error) {
+            html += `
+                <div class="test-case fail">
+                    <h3>Error</h3>
+                    <p>${error.message}</p>
+                    <p>Stack: ${error.stack}</p>
+                </div>
+            `;
+        }
+        
+        // Test 2: 12x24 freestanding deck (rotated orientation)
+        const payload2 = {
+            length_ft: 24,
+            width_ft: 12,
+            height_ft: 4,
+            attachment: 'free',
+            footing_type: 'concrete',
+            species_grade: 'SPF #2',
+            decking_type: '5_4_decking',
+            optimization_goal: 'cost'
+        };
+        
+        html += '<h2>Test 2: 12x24 Freestanding Deck</h2>';
+        
+        try {
+            const result = computeStructure(payload2);
+            html += `
+                <div class="test-case pass">
+                    <h3>Success</h3>
+                    <h4>Joists:</h4>
+                    <pre>${JSON.stringify(result.joists, null, 2)}</pre>
+                    <h4>Beams:</h4>
+                    <pre>${JSON.stringify(result.beams, null, 2)}</pre>
+                    <h4>Posts:</h4>
+                    <pre>${JSON.stringify(result.posts, null, 2)}</pre>
+                </div>
+            `;
+            
+            // Verify joists are correct
+            if (result.joists.orientation === 'width' && result.joists.span_ft <= 12) {
+                html += '<div class="test-case pass"><p>✓ Joists span the shorter dimension (12\') correctly</p></div>';
+            } else {
+                html += '<div class="test-case fail"><p>✗ Joists not spanning correctly</p></div>';
+            }
+            
+        } catch (error) {
+            html += `
+                <div class="test-case fail">
+                    <h3>Error</h3>
+                    <p>${error.message}</p>
+                </div>
+            `;
+        }
+        
+        results.innerHTML = html;
+    </script>
+</body>
+</html>

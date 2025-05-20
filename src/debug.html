@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Console</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        button { margin: 5px; padding: 10px; }
+        #log { border: 1px solid #ccc; padding: 10px; min-height: 200px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>Debug Console</h1>
+    
+    <h2>Check Elements</h2>
+    <button onclick="checkElements()">Check All Elements</button>
+    <button onclick="testEventBus()">Test Event Bus</button>
+    <button onclick="testStore()">Test Store</button>
+    <button onclick="testFootprint()">Test Footprint</button>
+    
+    <h2>Log Output</h2>
+    <div id="log"></div>
+    
+    <script>
+        const log = (msg) => {
+            const logDiv = document.getElementById('log');
+            logDiv.textContent += msg + '\n';
+            console.log(msg);
+        };
+        
+        function checkElements() {
+            log('=== Checking Elements ===');
+            const elementsToCheck = [
+                'deck-canvas',
+                'rectangle-tool-btn',
+                'select-tool-btn',
+                'undo-btn',
+                'redo-btn',
+                'clear-canvas-btn',
+                'generate-btn',
+                'width-ft',
+                'length-ft',
+                'height-ft',
+                'grid-visible',
+                'grid-snap',
+                'grid-spacing'
+            ];
+            
+            elementsToCheck.forEach(id => {
+                const el = parent.document.getElementById(id);
+                log(`${id}: ${el ? 'FOUND' : 'NOT FOUND'}`);
+            });
+        }
+        
+        function testEventBus() {
+            log('=== Testing Event Bus ===');
+            if (parent.eventBus) {
+                log('Event bus exists');
+                parent.eventBus.emit('test:event', { test: true });
+                log('Test event emitted');
+            } else {
+                log('Event bus not found');
+            }
+        }
+        
+        function testStore() {
+            log('=== Testing Store ===');
+            if (parent.store) {
+                log('Store exists');
+                const state = parent.store.getState();
+                log('State: ' + JSON.stringify(state, null, 2));
+            } else {
+                log('Store not found - checking window');
+                // Check if store is on window
+                const scripts = parent.document.scripts;
+                log(`Found ${scripts.length} scripts`);
+            }
+        }
+        
+        function testFootprint() {
+            log('=== Testing Footprint ===');
+            try {
+                // Try to get drawing surface
+                if (parent.drawingSurface) {
+                    log('Drawing surface found');
+                    const footprintLayer = parent.drawingSurface.layers.find(l => l.id === 'footprint');
+                    if (footprintLayer) {
+                        log('Footprint layer found');
+                        log('Current tool: ' + footprintLayer.currentTool);
+                        log('Current footprint: ' + JSON.stringify(footprintLayer.footprint));
+                    } else {
+                        log('Footprint layer not found');
+                    }
+                } else {
+                    log('Drawing surface not found');
+                }
+            } catch (e) {
+                log('Error: ' + e.message);
+            }
+        }
+    </script>
+</body>
+</html>

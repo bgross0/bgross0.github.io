@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Beam Splicing</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-case { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .pass { background-color: #e8f5e9; }
+        .fail { background-color: #ffebee; }
+        table { border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Test Beam Splicing Implementation</h1>
+    <div id="results"></div>
+
+    <!-- Load dependencies -->
+    <script src="../data/span-tables.js"></script>
+    <script src="../data/materials.js"></script>
+    <script src="../js/engine/validation.js"></script>
+    <script src="../js/engine/utils.js"></script>
+    <script src="../js/engine/beam.js"></script>
+
+    <script>
+        const results = document.getElementById('results');
+
+        // Test case 1: 20' beam span with 10' joists (requires splicing)
+        let html = '<h2>Test Case 1: 20\' beam span with 10\' joists</h2>';
+        
+        try {
+            const result = selectBeam(20, 10, 'SPF #2');
+            html += `
+                <div class="test-case ${result.spliced ? 'pass' : 'fail'}">
+                    <h3>Result: ${result.spliced ? 'SPLICED' : 'SINGLE'} Beam</h3>
+                    <p><strong>Beam Size:</strong> ${result.size}</p>
+                    <p><strong>Post Spacing:</strong> ${result.post_spacing_ft.toFixed(2)}'</p>
+                    <p><strong>Post Count:</strong> ${result.post_count}</p>
+                    <p><strong>Total Span:</strong> ${result.span_ft}'</p>
+                    <p><strong>Joist Span:</strong> ${result.joist_span_ft}'</p>
+                    <h4>Segments:</h4>
+                    <pre>${JSON.stringify(result.segments, null, 2)}</pre>
+                </div>
+            `;
+        } catch (error) {
+            html += `
+                <div class="test-case fail">
+                    <h3>Error</h3>
+                    <p>${error.message}</p>
+                </div>
+            `;
+        }
+
+        // Test case 2: 12' beam span with 10' joists (should NOT require splicing)
+        html += '<h2>Test Case 2: 12\' beam span with 10\' joists</h2>';
+        
+        try {
+            const result = selectBeam(12, 10, 'SPF #2');
+            html += `
+                <div class="test-case ${result.spliced ? 'fail' : 'pass'}">
+                    <h3>Result: ${result.spliced ? 'SPLICED' : 'SINGLE'} Beam</h3>
+                    <p><strong>Beam Size:</strong> ${result.size}</p>
+                    <p><strong>Post Spacing:</strong> ${result.post_spacing_ft.toFixed(2)}'</p>
+                    <p><strong>Post Count:</strong> ${result.post_count}</p>
+                    <p><strong>Total Span:</strong> ${result.span_ft}'</p>
+                    <p><strong>Joist Span:</strong> ${result.joist_span_ft}'</p>
+                    <h4>Segments:</h4>
+                    <pre>${JSON.stringify(result.segments, null, 2)}</pre>
+                </div>
+            `;
+        } catch (error) {
+            html += `
+                <div class="test-case fail">
+                    <h3>Error</h3>
+                    <p>${error.message}</p>
+                </div>
+            `;
+        }
+
+        // Test case 3: 30' beam span with 12' joists (requires multiple splices)
+        html += '<h2>Test Case 3: 30\' beam span with 12\' joists</h2>';
+        
+        try {
+            const result = selectBeam(30, 12, 'SPF #2');
+            html += `
+                <div class="test-case ${result.spliced ? 'pass' : 'fail'}">
+                    <h3>Result: ${result.spliced ? 'SPLICED' : 'SINGLE'} Beam</h3>
+                    <p><strong>Beam Size:</strong> ${result.size}</p>
+                    <p><strong>Post Spacing:</strong> ${result.post_spacing_ft.toFixed(2)}'</p>
+                    <p><strong>Post Count:</strong> ${result.post_count}</p>
+                    <p><strong>Total Span:</strong> ${result.span_ft}'</p>
+                    <p><strong>Joist Span:</strong> ${result.joist_span_ft}'</p>
+                    <h4>Segments:</h4>
+                    <pre>${JSON.stringify(result.segments, null, 2)}</pre>
+                </div>
+            `;
+        } catch (error) {
+            html += `
+                <div class="test-case fail">
+                    <h3>Error</h3>
+                    <p>${error.message}</p>
+                </div>
+            `;
+        }
+
+        // Show beam span table for reference
+        html += '<h2>IRC Beam Span Reference</h2>';
+        html += '<p>SPF #2 beam spans (feet.inches format)</p>';
+        html += '<table><tr><th>Beam Size</th><th>6\' Joist</th><th>8\' Joist</th><th>10\' Joist</th><th>12\' Joist</th></tr>';
+        
+        const beamTable = spanTables.beams['SPF #2'];
+        const testBeamSizes = ['(1)2x8', '(2)2x8', '(3)2x8', '(1)2x10', '(2)2x10', '(3)2x10', '(1)2x12', '(2)2x12', '(3)2x12'];
+        
+        for (const size of testBeamSizes) {
+            if (beamTable[size]) {
+                html += '<tr>';
+                html += `<td>${size}</td>`;
+                for (const js of [6, 8, 10, 12]) {
+                    const span = beamTable[size][js];
+                    if (span) {
+                        html += `<td>${span} (${engineUtils.feetInchesToDecimal(span).toFixed(2)}')</td>`;
+                    } else {
+                        html += '<td>-</td>';
+                    }
+                }
+                html += '</tr>';
+            }
+        }
+        html += '</table>';
+
+        results.innerHTML = html;
+    </script>
+</body>
+</html>

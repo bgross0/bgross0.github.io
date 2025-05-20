@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Beam Selection Issue</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-case { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .error { background-color: #ffebee; }
+        .success { background-color: #e8f5e9; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Debug Beam Selection Issue</h1>
+    <div id="results"></div>
+
+    <!-- Load dependencies -->
+    <script src="../data/span-tables.js"></script>
+    <script src="../data/materials.js"></script>
+    <script src="../js/engine/validation.js"></script>
+    <script src="../js/engine/beam.js"></script>
+
+    <script>
+        const results = document.getElementById('results');
+
+        function addResult(title, content, isError = false) {
+            const div = document.createElement('div');
+            div.className = `test-case ${isError ? 'error' : 'success'}`;
+            div.innerHTML = `<h3>${title}</h3>${content}`;
+            results.appendChild(div);
+        }
+
+        // Test beam selection with different parameters
+        const testCases = [
+            { beamSpan: 16, joistSpan: 15, species: 'SPF #2' },
+            { beamSpan: 16, joistSpan: 14, species: 'SPF #2' },
+            { beamSpan: 16, joistSpan: 12, species: 'SPF #2' },
+            { beamSpan: 16, joistSpan: 10, species: 'SPF #2' },
+            { beamSpan: 20, joistSpan: 10, species: 'SPF #2' }
+        ];
+
+        testCases.forEach(test => {
+            try {
+                const result = selectBeam(test.beamSpan, test.joistSpan, test.species);
+                addResult(
+                    `Beam span: ${test.beamSpan}', Joist span: ${test.joistSpan}'`,
+                    `<pre>${JSON.stringify(result, null, 2)}</pre>`
+                );
+            } catch (error) {
+                addResult(
+                    `Beam span: ${test.beamSpan}', Joist span: ${test.joistSpan}'`,
+                    `<p>Error: ${error.message}</p>`,
+                    true
+                );
+            }
+        });
+
+        // Show available span table data
+        const sampleBeamTable = spanTables.beams['SPF #2'];
+        const availableJoistSpans = Object.keys(sampleBeamTable['(3)2x10'] || {});
+        
+        addResult(
+            'Available Joist Spans in IRC Table',
+            `<p>The beam span tables have entries for these joist spans:</p>
+             <pre>${JSON.stringify(availableJoistSpans, null, 2)}</pre>`
+        );
+
+        // Show sample beam configurations
+        const sampleBeamSize = '(3)2x10';
+        const sampleData = sampleBeamTable[sampleBeamSize];
+        
+        addResult(
+            `Sample: ${sampleBeamSize} beam capabilities`,
+            `<pre>${JSON.stringify(sampleData, null, 2)}</pre>`
+        );
+    </script>
+</body>
+</html>

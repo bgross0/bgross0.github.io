@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Integration Test - Cantilever Changes</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-case { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .pass { background-color: #e8f5e9; }
+        .fail { background-color: #ffebee; }
+        .info { background-color: #f5f5f5; margin: 10px 0; padding: 10px; }
+        pre { background: #f0f0f0; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Integration Test - Review of Cantilever Changes</h1>
+
+    <div id="results"></div>
+
+    <!-- Load all dependencies in correct order -->
+    <script src="../data/span-tables.js"></script>
+    <script src="../data/materials.js"></script>
+    <script src="../js/utils/eventBus.js"></script>
+    <script src="../js/utils/store.js"></script>
+    <script src="../js/utils/command.js"></script>
+    <script src="../js/utils/persistence.js"></script>
+    <script src="../js/engine/validation.js"></script>
+    <script src="../js/engine/joist.js"></script>
+    <script src="../js/engine/beam.js"></script>
+    <script src="../js/engine/post.js"></script>
+    <script src="../js/engine/materials.js"></script>
+    <script src="../js/engine/cantilever-optimizer.js"></script>
+    <script src="../js/engine/index.js"></script>
+
+    <script>
+        const results = document.getElementById('results');
+        let totalTests = 0;
+        let passedTests = 0;
+
+        function addResult(title, passed, details) {
+            totalTests++;
+            if (passed) passedTests++;
+            
+            const div = document.createElement('div');
+            div.className = `test-case ${passed ? 'pass' : 'fail'}`;
+            div.innerHTML = `
+                <h3>${title}</h3>
+                <p>Status: ${passed ? 'PASS' : 'FAIL'}</p>
+                ${details ? `<div class="info">${details}</div>` : ''}
+            `;
+            results.appendChild(div);
+        }
+
+        // Test 1: Check if cantilever optimizer exists
+        try {
+            const hasOptimizer = typeof cantileverOptimizer !== 'undefined';
+            addResult('Cantilever Optimizer Loaded', hasOptimizer, 
+                hasOptimizer ? 'cantileverOptimizer is available' : 'cantileverOptimizer is missing');
+        } catch (e) {
+            addResult('Cantilever Optimizer Loaded', false, `Error: ${e.message}`);
+        }
+
+        // Test 2: Test basic 10x10 deck (should have no cantilever)
+        try {
+            const result = computeStructure({
+                width_ft: 10,
+                length_ft: 10,
+                height_ft: 3,
+                attachment: 'ledger',
+                beam_style_outer: null,
+                footing_type: 'helical',
+                species_grade: 'SPF #2',
+                decking_type: 'composite_1in',
+                optimization_goal: 'cost'
+            });
+            
+            const expected = result.joists.cantilever_ft === 0;
+            addResult('10x10 Deck - No Cantilever', expected, 
+                `<pre>${JSON.stringify(result.joists, null, 2)}</pre>`);
+        } catch (e) {
+            addResult('10x10 Deck - No Cantilever', false, `Error: ${e.message}`);
+        }
+
+        // Test 3: Test deck with drop beam (should allow cantilever)
+        try {
+            const result = computeStructure({
+                width_ft: 16,
+                length_ft: 20,
+                height_ft: 3,
+                attachment: 'ledger',
+                beam_style_outer: 'drop',
+                footing_type: 'helical',
+                species_grade: 'SPF #2',
+                decking_type: 'composite_1in',
+                optimization_goal: 'cost'
+            });
+            
+            const hasCantiever = result.joists.cantilever_ft > 0;
+            const validCantilever = result.joists.cantilever_ft <= (16 / 4); // IRC rule
+            addResult('16x20 Deck - Drop Beam Cantilever', hasCantiever && validCantilever, 
+                `<pre>${JSON.stringify(result.joists, null, 2)}</pre>`);
+        } catch (e) {
+            addResult('16x20 Deck - Drop Beam Cantilever', false, `Error: ${e.message}`);
+        }
+
+        // Test 4: Test inline beam (no cantilever allowed)
+        try {
+            const result = computeStructure({
+                width_ft: 12,
+                length_ft: 16,
+                height_ft: 2,
+                attachment: 'free',
+                beam_style_outer: 'inline',
+                beam_style_inner: 'inline',
+                footing_type: 'surface',
+                species_grade: 'SPF #2',
+                decking_type: 'composite_1in',
+                optimization_goal: 'cost'
+            });
+            
+            const noCantilever = result.joists.cantilever_ft === 0;
+            addResult('12x16 Deck - Inline Beam No Cantilever', noCantilever, 
+                `<pre>${JSON.stringify(result.joists, null, 2)}</pre>`);
+        } catch (e) {
+            addResult('12x16 Deck - Inline Beam No Cantilever', false, `Error: ${e.message}`);
+        }
+
+        // Test 5: Test beam selection logic
+        try {
+            const result = selectBeam(16, 12, 'SPF #2');
+            const validBeam = result && result.size && result.post_spacing_ft;
+            addResult('Beam Selection Function', validBeam, 
+                `<pre>${JSON.stringify(result, null, 2)}</pre>`);
+        } catch (e) {
+            addResult('Beam Selection Function', false, `Error: ${e.message}`);
+        }
+
+        // Test 6: Test auto beam style selection
+        try {
+            // Should prefer drop beam for cost optimization
+            const dropStyle = determineBeamStyle('outer', null, 'ledger', 'helical', 4);
+            const isDropStyle = dropStyle === 'drop';
+            
+            // Should use inline for low clearance
+            const inlineStyle = determineBeamStyle('inner', null, 'free', 'helical', 2);
+            const isInlineStyle = inlineStyle === 'inline';
+            
+            addResult('Auto Beam Style Selection', isDropStyle && isInlineStyle, 
+                `Outer (4ft): ${dropStyle}, Inner (2ft): ${inlineStyle}`);
+        } catch (e) {
+            addResult('Auto Beam Style Selection', false, `Error: ${e.message}`);
+        }
+
+        // Test 7: Test materials calculation
+        try {
+            const frame = {
+                joists: {
+                    size: '2x10',
+                    count: 10,
+                    span_ft: 10,
+                    cantilever_ft: 2,
+                    total_length_ft: 12
+                },
+                beams: [{
+                    style: 'drop',
+                    size: '(3)2x10',
+                    span_ft: 16,
+                    dimension: '2x10',
+                    plyCount: 3
+                }],
+                posts: [{x: 0, y: 0, height_ft: 8}, {x: 8, y: 0, height_ft: 8}]
+            };
+            
+            const takeoff = generateMaterialTakeoff(frame, 'SPF #2');
+            const hasMaterials = takeoff && takeoff.items && takeoff.items.length > 0;
+            addResult('Materials Calculation', hasMaterials, 
+                `<pre>${JSON.stringify(takeoff.items.slice(0, 5), null, 2)}</pre>`);
+        } catch (e) {
+            addResult('Materials Calculation', false, `Error: ${e.message}`);
+        }
+
+        // Test 8: Check for any missing dependencies
+        try {
+            const dependencies = [
+                'spanTables',
+                'materials',
+                'EngineError',
+                'cantileverOptimizer',
+                'selectJoist',
+                'selectBeam',
+                'determineBeamStyle',
+                'generatePostList',
+                'generateMaterialTakeoff',
+                'computeStructure'
+            ];
+            
+            const missing = dependencies.filter(dep => typeof window[dep] === 'undefined');
+            
+            addResult('Dependencies Check', missing.length === 0, 
+                missing.length > 0 ? `Missing: ${missing.join(', ')}` : 'All dependencies found');
+        } catch (e) {
+            addResult('Dependencies Check', false, `Error: ${e.message}`);
+        }
+
+        // Summary
+        const summaryDiv = document.createElement('div');
+        summaryDiv.style.marginTop = '30px';
+        summaryDiv.style.fontSize = '20px';
+        summaryDiv.style.fontWeight = 'bold';
+        summaryDiv.style.color = passedTests === totalTests ? 'green' : 'red';
+        summaryDiv.innerHTML = `Summary: ${passedTests}/${totalTests} tests passed`;
+        results.appendChild(summaryDiv);
+
+        // Potential Issues Found
+        const issuesDiv = document.createElement('div');
+        issuesDiv.style.marginTop = '20px';
+        issuesDiv.innerHTML = `
+            <h2>Review Summary</h2>
+            <div class="info">
+                <h3>Changes Made:</h3>
+                <ul>
+                    <li>✓ Beam style selection now prefers drop beams unless clearance requires inline</li>
+                    <li>✓ Implemented cantilever optimization to minimize material costs</li>
+                    <li>✓ Fixed tributary width calculation for beams</li>
+                    <li>✓ Created comprehensive test cases</li>
+                </ul>
+                
+                <h3>Potential Issues to Address:</h3>
+                <ul>
+                    <li>Need to ensure cantilever optimizer gracefully handles edge cases</li>
+                    <li>May need to add more validation for extreme deck sizes</li>
+                    <li>Should verify visualization updates correctly with cantilever changes</li>
+                    <li>Consider adding user-facing messages about optimization choices</li>
+                </ul>
+            </div>
+        `;
+        results.appendChild(issuesDiv);
+    </script>
+</body>
+</html>

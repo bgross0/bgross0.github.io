@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug 20ft Beam Issue</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-case { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .pass { background-color: #e8f5e9; }
+        .fail { background-color: #ffebee; }
+        table { border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; }
+    </style>
+</head>
+<body>
+    <h1>Debug 20ft Beam Span Issue</h1>
+    <div id="results"></div>
+
+    <!-- Load dependencies -->
+    <script src="../data/span-tables.js"></script>
+    <script src="../data/materials.js"></script>
+    <script src="../js/engine/validation.js"></script>
+    <script src="../js/engine/utils.js"></script>
+    <script src="../js/engine/beam.js"></script>
+
+    <script>
+        const results = document.getElementById('results');
+
+        // Show what's in the beam table for 10' joist span
+        const beamTable = spanTables.beams['SPF #2'];
+        let html = '<h3>SPF #2 Beam Table - 10\' Joist Span</h3>';
+        html += '<table><tr><th>Beam Size</th><th>Raw Value</th><th>Converted (decimal ft)</th></tr>';
+        
+        for (const size in beamTable) {
+            if (beamTable[size][10]) {
+                const rawValue = beamTable[size][10];
+                const converted = engineUtils.feetInchesToDecimal(rawValue);
+                html += `<tr><td>${size}</td><td>${rawValue}</td><td>${converted.toFixed(3)}</td></tr>`;
+            }
+        }
+        html += '</table>';
+        
+        results.innerHTML = html;
+
+        // Test beam selection for 20' span with 10' joists
+        try {
+            const result = selectBeam(20, 10, 'SPF #2');
+            results.innerHTML += `
+                <div class="test-case pass">
+                    <h3>Success: 20' beam span with 10' joist span</h3>
+                    <p>Selected: ${result.size}</p>
+                    <p>Post spacing: ${result.post_spacing_ft}'</p>
+                    <p>Post count: ${result.post_count}</p>
+                </div>
+            `;
+        } catch (error) {
+            results.innerHTML += `
+                <div class="test-case fail">
+                    <h3>Error: 20' beam span with 10' joist span</h3>
+                    <p>${error.message}</p>
+                    <p>This suggests no single beam can span 20' when supporting 10' joists.</p>
+                    <p><strong>Solution: Use multiple beams spliced at posts</strong></p>
+                </div>
+            `;
+        }
+
+        // Check maximum beam spans
+        html = '<h3>Maximum Beam Spans for Different Joist Spans</h3>';
+        html += '<table><tr><th>Joist Span</th><th>Beam Size</th><th>Max Beam Span</th></tr>';
+        
+        const testJoistSpans = [6, 8, 10, 12, 14, 16];
+        const testBeamSizes = ['(3)2x10', '(3)2x12'];
+        
+        for (const joistSpan of testJoistSpans) {
+            for (const beamSize of testBeamSizes) {
+                if (beamTable[beamSize] && beamTable[beamSize][joistSpan]) {
+                    const rawValue = beamTable[beamSize][joistSpan];
+                    const converted = engineUtils.feetInchesToDecimal(rawValue);
+                    html += `<tr><td>${joistSpan}'</td><td>${beamSize}</td><td>${converted.toFixed(1)}'</td></tr>`;
+                }
+            }
+        }
+        html += '</table>';
+        
+        results.innerHTML += html;
+
+        // Suggest solution
+        results.innerHTML += `
+            <div class="test-case">
+                <h3>Recommended Solution for Long Spans</h3>
+                <p>For beam spans exceeding the IRC table limits:</p>
+                <ol>
+                    <li>Use multiple beam segments spliced at intermediate posts</li>
+                    <li>Place posts at intervals that the selected beam size can span</li>
+                    <li>For a 20' deck with 10' joists, a (3)2x10 beam can span ~9.75'</li>
+                    <li>Solution: Use 3 posts (at 0', 10', and 20') with beams spliced at the middle post</li>
+                </ol>
+            </div>
+        `;
+    </script>
+</body>
+</html>

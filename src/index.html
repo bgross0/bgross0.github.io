@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deck Builder</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="top-bar-section">
+                <button id="rectangle-tool-btn" class="tool-btn active" title="Rectangle Tool">Rectangle</button>
+                <button id="select-tool-btn" class="tool-btn" title="Select Tool">Select</button>
+                <div class="separator"></div>
+                <button id="undo-btn" title="Undo (Ctrl+Z)">Undo</button>
+                <button id="redo-btn" title="Redo (Ctrl+Y)">Redo</button>
+                <div class="separator"></div>
+                <button id="clear-canvas-btn" class="danger" title="Clear Canvas">Clear Canvas</button>
+            </div>
+            <div class="top-bar-section">
+                <label>
+                    <input type="checkbox" id="grid-visible" checked>
+                    Grid
+                </label>
+                <label>
+                    <input type="checkbox" id="grid-snap" checked>
+                    Snap
+                </label>
+                <label>
+                    Spacing:
+                    <select id="grid-spacing">
+                        <option value="0.5">0.5"</option>
+                        <option value="1">1"</option>
+                        <option value="3">3"</option>
+                        <option value="6" selected>6"</option>
+                        <option value="12">12"</option>
+                    </select>
+                </label>
+            </div>
+            <div class="top-bar-section">
+                <button id="zoom-out-btn" title="Zoom Out">Zoom -</button>
+                <button id="zoom-in-btn" title="Zoom In">Zoom +</button>
+                <div class="separator"></div>
+                <select id="export-menu">
+                    <option value="">Export</option>
+                    <option value="png">Export PNG</option>
+                    <option value="csv">Export CSV</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Canvas Area -->
+            <div class="canvas-container">
+                <canvas id="deck-canvas"></canvas>
+                <div id="warning-banner" class="warning-banner" style="display: none;"></div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <!-- Tabs -->
+                <div class="tabs">
+                    <button class="tab-button active" data-tab="properties">Deck Properties</button>
+                    <button class="tab-button" data-tab="framing">Framing Details</button>
+                    <button class="tab-button" data-tab="costs">Material Costs</button>
+                </div>
+                
+                <!-- Tab Content -->
+                <div class="tab-content">
+                    <!-- Deck Properties Tab -->
+                    <div id="properties-tab" class="tab-panel active">
+                        <!-- Footprint -->
+                        <fieldset>
+                            <legend>Footprint</legend>
+                            <label>
+                                Width (ft):
+                                <input type="number" id="width-ft" value="" min="0" step="0.25" readonly>
+                            </label>
+                            <label>
+                                Length (ft):
+                                <input type="number" id="length-ft" value="" min="0" step="0.25" readonly>
+                            </label>
+                            <p class="help-text">Draw a rectangle on the canvas to set dimensions</p>
+                        </fieldset>
+
+                        <!-- Context -->
+                        <fieldset>
+                            <legend>Configuration</legend>
+                            <label>
+                                Height (ft):
+                                <input type="number" id="height-ft" value="3" min="0" step="0.25">
+                            </label>
+                            <label>
+                                Attachment:
+                                <select id="attachment">
+                                    <option value="ledger" selected>Ledger</option>
+                                    <option value="free">Freestanding</option>
+                                </select>
+                            </label>
+                            <label>
+                                Outer Beam Style:
+                                <select id="beam-style-outer">
+                                    <option value="">Auto</option>
+                                    <option value="drop">Drop</option>
+                                    <option value="inline">Inline</option>
+                                </select>
+                            </label>
+                            <label id="beam-style-inner-label" style="display: none;">
+                                Inner Beam Style:
+                                <select id="beam-style-inner">
+                                    <option value="">Auto</option>
+                                    <option value="drop">Drop</option>
+                                    <option value="inline">Inline</option>
+                                </select>
+                            </label>
+                            <label>
+                                Footing Type:
+                                <select id="footing-type">
+                                    <option value="helical" selected>Helical</option>
+                                    <option value="concrete">Concrete</option>
+                                    <option value="surface">Surface</option>
+                                </select>
+                            </label>
+                            <label>
+                                Species/Grade:
+                                <select id="species-grade">
+                                    <option value="SPF #2" selected>SPF #2</option>
+                                    <option value="DF #1">DF #1</option>
+                                    <option value="HF #2">HF #2</option>
+                                    <option value="SP #2">SP #2</option>
+                                </select>
+                            </label>
+                            <label>
+                                Joist Spacing:
+                                <select id="joist-spacing">
+                                    <option value="">Auto</option>
+                                    <option value="12">12"</option>
+                                    <option value="16">16"</option>
+                                    <option value="24">24"</option>
+                                </select>
+                            </label>
+                            <label>
+                                Decking Type:
+                                <select id="decking-type">
+                                    <option value="composite_1in" selected>Composite 1"</option>
+                                    <option value="wood_5/4">Wood 5/4</option>
+                                    <option value="wood_2x">Wood 2x</option>
+                                </select>
+                            </label>
+                            <label>
+                                Optimization Goal:
+                                <select id="optimization-goal">
+                                    <option value="cost" selected>Cost</option>
+                                    <option value="strength">Strength</option>
+                                </select>
+                            </label>
+                        </fieldset>
+
+                        <!-- Generate Structure -->
+                        <fieldset>
+                            <legend>Generate Structure</legend>
+                            <button id="generate-btn" class="generate-btn" disabled>Generate Structure</button>
+                            <p class="help-text">Draw a footprint first to enable generation</p>
+                        </fieldset>
+                    </div>
+
+                    <!-- Framing Details Tab -->
+                    <div id="framing-tab" class="tab-panel">
+                        <!-- Framing Specs -->
+                        <fieldset>
+                            <legend>Framing Specifications</legend>
+                            <div id="framing-specs">
+                                <p class="help-text">Generate structure to see framing specifications</p>
+                            </div>
+                        </fieldset>
+
+                        <!-- Material Takeoff -->
+                        <fieldset>
+                            <legend>Bill of Materials</legend>
+                            <div id="bom-table-container">
+                                <table id="bom-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Item</th>
+                                            <th>Qty</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Populated by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </fieldset>
+                    </div>
+
+                    <!-- Material Costs Tab -->
+                    <div id="costs-tab" class="tab-panel">
+                        <!-- Lumber Costs -->
+                        <fieldset>
+                            <legend>Lumber Costs (per linear foot)</legend>
+                            <label>
+                                2x6:
+                                <input type="number" id="cost-2x6" value="2.50" min="0" step="0.01">
+                            </label>
+                            <label>
+                                2x8:
+                                <input type="number" id="cost-2x8" value="3.25" min="0" step="0.01">
+                            </label>
+                            <label>
+                                2x10:
+                                <input type="number" id="cost-2x10" value="4.50" min="0" step="0.01">
+                            </label>
+                            <label>
+                                2x12:
+                                <input type="number" id="cost-2x12" value="5.75" min="0" step="0.01">
+                            </label>
+                            <label>
+                                6x6 Post:
+                                <input type="number" id="cost-6x6" value="12.00" min="0" step="0.01">
+                            </label>
+                        </fieldset>
+
+                        <!-- Hardware Costs -->
+                        <fieldset>
+                            <legend>Hardware Costs</legend>
+                            <label>
+                                Joist Hanger:
+                                <input type="number" id="cost-joist-hanger" value="4.00" min="0" step="0.01">
+                            </label>
+                            <label>
+                                Post Base:
+                                <input type="number" id="cost-post-base" value="35.00" min="0" step="0.01">
+                            </label>
+                            <label>
+                                Post Cap:
+                                <input type="number" id="cost-post-cap" value="28.00" min="0" step="0.01">
+                            </label>
+                            <label>
+                                Beam Splice Plate:
+                                <input type="number" id="cost-splice-plate" value="22.00" min="0" step="0.01">
+                            </label>
+                        </fieldset>
+
+                        <!-- Footing Costs -->
+                        <fieldset>
+                            <legend>Footing Costs (per post)</legend>
+                            <label>
+                                Helical Pile:
+                                <input type="number" id="cost-helical" value="500.00" min="0" step="1">
+                            </label>
+                            <label>
+                                Concrete Footing:
+                                <input type="number" id="cost-concrete" value="150.00" min="0" step="1">
+                            </label>
+                            <label>
+                                Surface Mount:
+                                <input type="number" id="cost-surface" value="75.00" min="0" step="1">
+                            </label>
+                        </fieldset>
+
+                        <!-- Cost Summary -->
+                        <fieldset>
+                            <legend>Cost Summary</legend>
+                            <div id="cost-summary">
+                                <p class="help-text">Generate structure to see cost breakdown</p>
+                            </div>
+                        </fieldset>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load JavaScript -->
+    <script src="js/utils/eventBus.js"></script>
+    <script src="js/utils/store.js"></script>
+    <script src="js/utils/command.js"></script>
+    <script src="js/utils/persistence.js"></script>
+    <script src="data/span-tables.js"></script>
+    <script src="data/materials.js"></script>
+    <script src="js/engine/validation.js"></script>
+    <script src="js/engine/utils.js"></script>
+    <script src="js/engine/joist.js"></script>
+    <script src="js/engine/beam.js"></script>
+    <script src="js/engine/post.js"></script>
+    <script src="js/engine/materials.js"></script>
+    <script src="js/engine/cantilever-optimizer.js"></script>
+    <script src="js/engine/index.js"></script>
+    <script src="js/ui/canvas.js"></script>
+    <script src="js/ui/grid.js"></script>
+    <script src="js/ui/footprint.js"></script>
+    <script src="js/ui/joistLayer.js"></script>
+    <script src="js/ui/beamLayer.js"></script>
+    <script src="js/ui/dimensions.js"></script>
+    <script src="js/ui/controls.js"></script>
+    <script src="js/ui/export.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
