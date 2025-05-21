@@ -83,9 +83,20 @@ class FootprintLayer extends Layer {
   }
   
   handleMouseDown(e) {
+    if (!e || typeof e.clientX === 'undefined' || typeof e.clientY === 'undefined') {
+      console.error('Invalid mouse event:', e);
+      return false;
+    }
+    
     const rect = this.surface.canvas.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
+    
+    // Ensure valid canvas coordinates
+    if (mouseX < 0 || mouseX > rect.width || mouseY < 0 || mouseY > rect.height) {
+      console.warn('Mouse position out of canvas bounds:', mouseX, mouseY);
+      return false;
+    }
     
     const worldPos = this.surface.toWorldCoords(mouseX, mouseY);
     
@@ -143,9 +154,19 @@ class FootprintLayer extends Layer {
   }
   
   handleMouseMove(e) {
+    if (!e || typeof e.clientX === 'undefined' || typeof e.clientY === 'undefined') {
+      console.error('Invalid mouse event in handleMouseMove:', e);
+      return;
+    }
+    
     const rect = this.surface.canvas.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
+    
+    // Only process mouse move within canvas bounds
+    if (mouseX < 0 || mouseX > rect.width || mouseY < 0 || mouseY > rect.height) {
+      return;
+    }
     
     const worldPos = this.surface.toWorldCoords(mouseX, mouseY);
     
@@ -168,20 +189,24 @@ class FootprintLayer extends Layer {
         endPos = gridLayer.snapToGrid(endPos.x, endPos.y);
       }
       
-      // Calculate dimensions
-      const width = Math.abs(endPos.x - this.drawStart.x);
-      const height = Math.abs(endPos.y - this.drawStart.y);
+      // Calculate dimensions (ensure non-zero)
+      const width = Math.max(0.1, Math.abs(endPos.x - this.drawStart.x));
+      const height = Math.max(0.1, Math.abs(endPos.y - this.drawStart.y));
       
       // Ensure positive dimensions and proper origin
-      this.footprint.origin.x = this.surface.pixelsToFeet(Math.min(this.drawStart.x, endPos.x));
-      this.footprint.origin.y = this.surface.pixelsToFeet(Math.min(this.drawStart.y, endPos.y));
-      this.footprint.width_ft = this.surface.pixelsToFeet(width);
-      this.footprint.length_ft = this.surface.pixelsToFeet(height);
-      
-      // Update dimensions display without creating command
-      console.log('Emitting footprint:preview with:', this.footprint);
-      eventBus.emit('footprint:preview', this.footprint);
-      this.surface.draw();
+      try {
+        this.footprint.origin.x = this.surface.pixelsToFeet(Math.min(this.drawStart.x, endPos.x));
+        this.footprint.origin.y = this.surface.pixelsToFeet(Math.min(this.drawStart.y, endPos.y));
+        this.footprint.width_ft = this.surface.pixelsToFeet(width);
+        this.footprint.length_ft = this.surface.pixelsToFeet(height);
+        
+        // Update dimensions display without creating command
+        console.log('Emitting footprint:preview with:', this.footprint);
+        eventBus.emit('footprint:preview', this.footprint);
+        this.surface.draw();
+      } catch (error) {
+        console.error('Error updating footprint:', error);
+      }
     } else if (this.isDragging && this.dragStart && this.footprint) {
       // Moving existing rectangle
       const dx = worldPos.x - this.dragStart.x;
@@ -211,22 +236,33 @@ class FootprintLayer extends Layer {
   }
   
   handleMouseUp(e) {
+    console.log('handleMouseUp called:', e);
+    
     if (this.isDrawing) {
+      console.log('Finishing drawing, footprint:', this.footprint);
       this.isDrawing = false;
       this.drawStart = null;
       
+      if (!this.footprint) {
+        console.warn('No footprint defined in handleMouseUp');
+        return;
+      }
+      
       // Validate minimum size
       if (this.footprint.width_ft < 1 || this.footprint.length_ft < 1) {
+        console.log('Footprint too small, clearing');
         this.footprint = null;
         eventBus.emit('footprint:change', null);
         eventBus.emit('footprint:preview', null);
       } else {
+        console.log('Emitting valid footprint change');
         // Just emit the footprint change, don't generate structure
         eventBus.emit('footprint:change', this.footprint);
       }
     }
     
     if (this.isDragging && this.footprint) {
+      console.log('Finishing drag, footprint:', this.footprint);
       // Emit final position after dragging
       eventBus.emit('footprint:change', this.footprint);
     }
@@ -236,11 +272,21 @@ class FootprintLayer extends Layer {
   }
   
   setTool(tool) {
+    console.log('FootprintLayer.setTool:', tool, 'previous:', this.currentTool);
     this.currentTool = tool;
     this.isSelected = false;
     
     // Clear any drawing state when switching tools
     this.isDrawing = false;
     this.drawStart = null;
+    
+    // Update cursor style to match the tool
+    if (this.surface && this.surface.canvas) {
+      if (tool === 'rectangle') {
+        this.surface.canvas.style.cursor = 'crosshair';
+      } else {
+        this.surface.canvas.style.cursor = 'default';
+      }
+    }
   }
 }

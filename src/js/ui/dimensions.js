@@ -99,6 +99,12 @@ class DimensionLayer extends Layer {
   }
   
   formatMeasurement(feet) {
+    // Use the global formatFeetInches function if available, otherwise fallback
+    if (typeof formatFeetInches === 'function') {
+      return formatFeetInches(feet);
+    }
+    
+    // Fallback implementation if the global function is not available
     const wholeFeet = Math.floor(feet);
     const inches = Math.round((feet - wholeFeet) * 12);
     

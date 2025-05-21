@@ -28,9 +28,17 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Initialize drawing surface
   const canvas = document.getElementById('deck-canvas');
+  
+  // Set an explicit size to ensure the canvas renders correctly
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+  
   const drawingSurface = new DrawingSurface(canvas, {
     pixelsPerFoot: 20
   });
+  
+  // Set an initial zoom level that will show the grid
+  drawingSurface.zoom = 1.2; // Higher zoom to ensure grid is visible
   
   // Create layers
   const gridLayer = new GridLayer({
@@ -58,6 +66,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const commandStack = new CommandStack(20);
   
   // Initialize UI controls
+  console.log('UIControls available:', typeof UIControls !== 'undefined');
+  if (typeof UIControls === 'undefined') {
+    console.error('UIControls class is not defined! Check that controls.js is loaded properly.');
+    alert('Error: UIControls is not defined. The application may not work correctly.');
+  }
   const uiControls = new UIControls(store, drawingSurface, commandStack);
   window.uiControls = uiControls; // Make globally accessible
   
@@ -71,19 +84,98 @@ document.addEventListener('DOMContentLoaded', () => {
   canvas.addEventListener('mousedown', (e) => {
     // Only handle left click for drawing
     if (e.button === 0) {
-      console.log('MouseDown: tool=', footprintLayer.currentTool);
-      footprintLayer.handleMouseDown(e);
+      console.log('MouseDown event:', {
+        tool: footprintLayer.currentTool,
+        button: e.button,
+        clientX: e.clientX,
+        clientY: e.clientY,
+        canvasRect: canvas.getBoundingClientRect()
+      });
+      
+      // Ensure mouse events are properly handled
+      e.stopPropagation();
+      
+      // Force the drawing to start (debug)
+      if (footprintLayer.currentTool === 'rectangle') {
+        // Make sure the canvas has focus
+        canvas.focus();
+        
+        // Try to handle the mouse down event
+        try {
+          const handled = footprintLayer.handleMouseDown(e);
+          console.log('MouseDown handled:', handled);
+        } catch (error) {
+          console.error('Error in handleMouseDown:', error);
+        }
+      }
     }
   });
   
   canvas.addEventListener('mousemove', (e) => {
-    footprintLayer.handleMouseMove(e);
+    try {
+      footprintLayer.handleMouseMove(e);
+    } catch (error) {
+      console.error('Error in handleMouseMove:', error);
+    }
   });
   
   canvas.addEventListener('mouseup', (e) => {
     if (e.button === 0) {
       console.log('MouseUp');
-      footprintLayer.handleMouseUp(e);
+      try {
+        footprintLayer.handleMouseUp(e);
+      } catch (error) {
+        console.error('Error in handleMouseUp:', error);
+      }
+    }
+  });
+  
+  // Touch events for drawing
+  canvas.addEventListener('touchstart', (e) => {
+    // We're supporting drawing with one finger
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      const simulatedEvent = {
+        button: 0, // Simulate left mouse button
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        preventDefault: function() { e.preventDefault(); }
+      };
+      console.log('TouchStart: simulating mousedown');
+      footprintLayer.handleMouseDown(simulatedEvent);
+      // Only prevent default on touch events
+      if (e.type === 'touchstart') {
+        e.preventDefault();
+      }
+    }
+  });
+  
+  canvas.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      const simulatedEvent = {
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        preventDefault: function() { e.preventDefault(); }
+      };
+      footprintLayer.handleMouseMove(simulatedEvent);
+      // Only prevent default on touch events
+      if (e.type === 'touchmove') {
+        e.preventDefault(); // Prevent scrolling while drawing
+      }
+    }
+  });
+  
+  canvas.addEventListener('touchend', (e) => {
+    const simulatedEvent = {
+      button: 0, // Simulate left mouse button
+      preventDefault: function() { e.preventDefault(); }
+    };
+    console.log('TouchEnd: simulating mouseup');
+    footprintLayer.handleMouseUp(simulatedEvent);
+    // Only prevent default on touch events
+    if (e.type === 'touchend') {
+      e.preventDefault();
     }
   });
   
@@ -210,14 +302,70 @@ document.addEventListener('DOMContentLoaded', () => {
   // Update initial UI state
   uiControls.updateUIFromState();
   
-  // Initial draw
+  // Ensure the grid is visible by setting default values
+  const gridLayerRef = drawingSurface.layers.find(l => l.id === 'grid');
+  if (gridLayerRef) {
+    gridLayerRef.visible = true;
+    gridLayerRef.snap = true;
+    
+    // Ensure spacing is set to a reasonable value
+    gridLayerRef.spacing_in = gridLayerRef.spacing_in || 6;
+  }
+  
+  // Initial draw with extra logging
+  console.log('Initial draw with zoom:', drawingSurface.zoom);
   drawingSurface.draw();
+  
+  // Force a redraw after a short delay to handle any initialization issues
+  setTimeout(() => {
+    console.log('Forced redraw after initialization');
+    // Explicitly show the grid and draw
+    const gridLayerAfterInit = drawingSurface.layers.find(l => l.id === 'grid');
+    if (gridLayerAfterInit) {
+      gridLayerAfterInit.visible = true;
+      document.getElementById('grid-visible').checked = true;
+    }
+    drawingSurface.draw();
+    
+    // Set another timeout for a second redraw, in case the first one doesn't work
+    setTimeout(() => {
+      console.log('Second forced redraw');
+      drawingSurface.draw();
+    }, 1000);
+  }, 500);
   
   // Expose objects for debugging
   window.store = store;
   window.drawingSurface = drawingSurface;
   window.footprintLayer = footprintLayer;
   window.uiControls = uiControls;
+  
+  // Add debug tool function
+  window.debugState = function() {
+    console.log('=== DEBUG STATE ===');
+    console.log('Current tool:', footprintLayer.currentTool);
+    console.log('Drawing?', footprintLayer.isDrawing);
+    console.log('Current footprint:', footprintLayer.footprint);
+    console.log('Canvas dimensions:', canvas.width, 'x', canvas.height);
+    console.log('Canvas rect:', canvas.getBoundingClientRect());
+    console.log('Canvas zoom:', drawingSurface.zoom);
+    console.log('Pan position:', drawingSurface.pan);
+    console.log('Grid visible?', drawingSurface.layers.find(l => l.id === 'grid').visible);
+    return 'Debug info logged to console.';
+  };
+  
+  // Add force grid function
+  window.showGrid = function() {
+    const grid = drawingSurface.layers.find(l => l.id === 'grid');
+    if (grid) {
+      grid.visible = true;
+      grid.spacing_in = 6;
+      drawingSurface.zoom = 1.2;
+      drawingSurface.draw();
+      return 'Grid visibility forced';
+    }
+    return 'Grid layer not found';
+  };
   
   console.log('Deck Builder initialized');
   console.log('Available debug objects: store, drawingSurface, footprintLayer, uiControls');
@@ -259,6 +407,31 @@ function hideWarnings() {
   banner.style.display = 'none';
 }
 
+/**
+ * Converts decimal feet to feet and inches format
+ * @param {number} decimalFeet - Measurement in decimal feet
+ * @returns {string} - Formatted as X'-Y" where X is feet and Y is inches
+ */
+window.formatFeetInches = function(decimalFeet) {
+  // Handle null or undefined
+  if (decimalFeet === null || decimalFeet === undefined) {
+    return "0'-0\"";
+  }
+  
+  // Get the whole feet part
+  const feet = Math.floor(decimalFeet);
+  
+  // Calculate inches (rounded to nearest whole inch)
+  const inches = Math.round((decimalFeet - feet) * 12);
+  
+  // Handle case where inches rounds up to 12
+  if (inches === 12) {
+    return `${feet + 1}'-0"`;
+  }
+  
+  return `${feet}'-${inches}"`;
+}
+
 function updateFramingSpecs(engineOut, context) {
   const specsDiv = document.getElementById('framing-specs');
   
@@ -277,7 +450,7 @@ function updateFramingSpecs(engineOut, context) {
     html += `<p><strong>Size:</strong> ${engineOut.joists.size}</p>`;
     html += `<p><strong>Spacing:</strong> ${engineOut.joists.spacing_in}" O.C.</p>`;
     if (engineOut.joists.cantilever_ft > 0) {
-      html += `<p><strong>Cantilever:</strong> ${engineOut.joists.cantilever_ft}'-0"</p>`;
+      html += `<p><strong>Cantilever:</strong> ${formatFeetInches(engineOut.joists.cantilever_ft)}</p>`;
     }
     // Material info from joist material table
     html += `<p><strong>Material:</strong> SPF #2</p>`;
@@ -294,7 +467,7 @@ function updateFramingSpecs(engineOut, context) {
       html += `<p><strong>Size:</strong> ${beam.size}</p>`;
       html += `<p><strong>Style:</strong> ${beam.style}</p>`;
       if (beam.post_spacing_ft) {
-        html += `<p><strong>Post Spacing:</strong> ${beam.post_spacing_ft}'-0"</p>`;
+        html += `<p><strong>Post Spacing:</strong> ${formatFeetInches(beam.post_spacing_ft)}</p>`;
       }
       html += `<p><strong>Material:</strong> SPF #2</p>`;
       html += '</div>';
@@ -313,7 +486,7 @@ function updateFramingSpecs(engineOut, context) {
     html += '<ul>';
     engineOut.posts.forEach(post => {
       const beam = post.y === 0 ? 'inner beam' : 'outer beam';
-      html += `<li>${post.x}'-0" along ${beam}</li>`;
+      html += `<li>${formatFeetInches(post.x)} along ${beam}</li>`;
     });
     html += '</ul>';
     html += '</div>';

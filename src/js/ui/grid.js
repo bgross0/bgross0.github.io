@@ -11,9 +11,25 @@ class GridLayer extends Layer {
     const { width, height } = ctx.canvas;
     const surface = this.surface;
     
+    // Make sure we actually draw the grid on first render
+    console.log('Drawing grid with spacing:', this.spacing_in, 'zoom:', surface.zoom, 'visible:', this.visible);
+    
+    // If grid is not visible, don't draw it
+    if (!this.visible) {
+      console.log('Grid not visible, skipping draw');
+      return;
+    }
+    
     // Convert grid spacing from inches to pixels
     const spacingFt = this.spacing_in / 12;
     const spacingPx = surface.feetToPixels(spacingFt);
+    
+    // Ensure minimum spacing at any zoom level, but allow initial draw
+    const minPixelSpacing = 5;
+    if (spacingPx * surface.zoom < minPixelSpacing) {
+      console.log('Grid spacing too small, skipping:', spacingPx * surface.zoom, 'pixels');
+      return; // Skip drawing grid if too dense
+    }
     
     // Calculate grid bounds in world coordinates
     const topLeft = surface.toWorldCoords(0, 0);
@@ -25,7 +41,8 @@ class GridLayer extends Layer {
     const startY = Math.floor(topLeft.y / spacingPx) * spacingPx;
     const endY = Math.ceil(bottomRight.y / spacingPx) * spacingPx;
     
-    ctx.lineWidth = 1 / surface.zoom;
+    // Ensure minimum line width of 0.5px regardless of zoom
+    ctx.lineWidth = Math.max(0.5, 1 / surface.zoom);
     
     // Draw vertical lines
     for (let x = startX; x <= endX; x += spacingPx) {

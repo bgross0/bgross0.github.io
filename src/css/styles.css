@@ -18,6 +18,80 @@ html, body {
     height: 100%;
 }
 
+/* Header */
+.app-header {
+    background: #2c3e50;
+    color: white;
+    padding: 8px 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.app-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.header-actions button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 5px 12px;
+    border-radius: 3px;
+}
+
+.header-actions button:hover {
+    background-color: #2980b9;
+}
+
+/* Header */
+.app-header {
+    background: #2c3e50;
+    color: white;
+    padding: 8px 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.app-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.header-actions button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 5px 12px;
+    border-radius: 3px;
+}
+
+.header-actions button:hover {
+    background-color: #2980b9;
+}
+
 /* Top Bar */
 .top-bar {
     display: flex;
@@ -138,6 +212,11 @@ input[type="checkbox"] {
     width: 100%;
     height: 100%;
     display: block;
+    outline: none; /* Remove outline when focused */
+}
+
+#deck-canvas:focus {
+    outline: 2px solid rgba(0, 102, 204, 0.3); /* Subtle focus indicator */
 }
 
 #deck-canvas.rectangle-tool {
@@ -329,8 +408,40 @@ fieldset select {
     margin: 3px 0;
 }
 
+/* Touch device specific styles */
+.touch-device button,
+.touch-device select,
+.touch-device input[type="number"] {
+    font-size: 16px;
+    padding: 8px 12px;
+    height: 44px;
+    min-height: 44px;
+}
+
+.touch-device .tab-button {
+    padding: 12px 0;
+    font-size: 15px;
+}
+
+.touch-device fieldset label {
+    margin-bottom: 16px;
+}
+
+.touch-device input[type="checkbox"] {
+    transform: scale(1.5);
+    margin-right: 8px;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
+    .app-header {
+        padding: 5px 10px;
+    }
+    
+    .app-title {
+        font-size: 16px;
+    }
+    
     .main-content {
         flex-direction: column;
     }
@@ -339,9 +450,50 @@ fieldset select {
         width: 100%;
         border-left: none;
         border-top: 1px solid #ddd;
+        height: auto;
+        min-height: 50%;
     }
     
     .top-bar {
         flex-wrap: wrap;
+    }
+    
+    .top-bar-section {
+        margin-bottom: 8px;
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .canvas-container {
+        height: 50vh;
+    }
+    
+    fieldset {
+        margin-bottom: 12px;
+    }
+    
+    .tab-content {
+        padding: 12px;
+    }
+}
+
+/* Small phones */
+@media (max-width: 480px) {
+    .tab-button {
+        font-size: 13px;
+        padding: 10px 5px;
+    }
+    
+    .header-actions button {
+        padding: 4px 8px;
+        font-size: 14px;
+    }
+    
+    fieldset {
+        padding: 10px;
+    }
+    
+    button, select, input {
+        font-size: 16px; /* Prevent zoom on focus on iOS */
     }
 }

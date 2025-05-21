@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Basic Engine Test</title>
+</head>
+<body>
+    <h1>DeckPro Engine Test</h1>
+    <div id="results"></div>
+    
+    <!-- Load all required scripts -->
+    <script src="../src/data/materials.js"></script>
+    <script src="../src/data/span-tables.js"></script>
+    <script src="../src/js/engine/materials.js"></script>
+    <script src="../src/js/engine/validation.js"></script>
+    <script src="../src/js/engine/utils.js"></script>
+    <script src="../src/js/engine/joist.js"></script>
+    <script src="../src/js/engine/beam.js"></script>
+    <script src="../src/js/engine/post.js"></script>
+    <script src="../src/js/engine/cantilever-optimizer.js"></script>
+    <script src="../src/js/engine/index.js"></script>
+    
+    <script>
+        // Run basic test
+        const payload = {
+            width_ft: 10,
+            length_ft: 12,
+            height_ft: 6,
+            attachment: 'ledger',
+            footing_type: 'concrete',
+            species_grade: 'SPF #2',
+            decking_type: '5_4_decking'
+        };
+        
+        try {
+            const result = computeStructure(payload);
+            document.getElementById('results').innerHTML = '<pre>' + JSON.stringify(result, null, 2) + '</pre>';
+            console.log('Test passed:', result);
+        } catch (error) {
+            document.getElementById('results').innerHTML = '<pre>Error: ' + error.message + '</pre>';
+            console.error('Test failed:', error);
+        }
+    </script>
+</body>
+</html>

@@ -2,12 +2,23 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deck Builder</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>DeckPro Designer</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <div id="app">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1 class="app-title">DeckPro Designer</h1>
+                <div class="header-actions">
+                    <button id="new-project-btn" title="New Project">New</button>
+                    <button id="help-btn" title="Help">Help</button>
+                </div>
+            </div>
+        </header>
+        
         <!-- Top Bar -->
         <div class="top-bar">
             <div class="top-bar-section">
@@ -55,7 +66,7 @@
         <div class="main-content">
             <!-- Canvas Area -->
             <div class="canvas-container">
-                <canvas id="deck-canvas"></canvas>
+                <canvas id="deck-canvas" tabindex="0"></canvas>
                 <div id="warning-banner" class="warning-banner" style="display: none;"></div>
             </div>
 
@@ -77,13 +88,13 @@
                             <legend>Footprint</legend>
                             <label>
                                 Width (ft):
-                                <input type="number" id="width-ft" value="" min="0" step="0.25" readonly>
+                                <input type="number" id="width-ft" value="" min="0" step="0.25">
                             </label>
                             <label>
                                 Length (ft):
-                                <input type="number" id="length-ft" value="" min="0" step="0.25" readonly>
+                                <input type="number" id="length-ft" value="" min="0" step="0.25">
                             </label>
-                            <p class="help-text">Draw a rectangle on the canvas to set dimensions</p>
+                            <p class="help-text">Draw on canvas or enter dimensions directly</p>
                         </fieldset>
 
                         <!-- Context -->

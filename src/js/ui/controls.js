@@ -1,5 +1,5 @@
 // UI control handlers
-class UIControls {
+window.UIControls = class UIControls {
   constructor(store, drawingSurface, commandStack) {
     this.store = store;
     this.drawingSurface = drawingSurface;
@@ -31,7 +31,9 @@ class UIControls {
       'clear-canvas-btn': 'Clear Canvas',
       'rectangle-tool-btn': 'Rectangle Tool',
       'select-tool-btn': 'Select Tool',
-      'generate-btn': 'Generate'
+      'generate-btn': 'Generate',
+      'new-project-btn': 'New Project',
+      'help-btn': 'Help'
     };
     
     for (const [id, name] of Object.entries(elements)) {
@@ -41,6 +43,31 @@ class UIControls {
       } else {
         console.log(`${name} button found: #${id}`);
       }
+    }
+    
+    // Header buttons
+    const newProjectBtn = document.getElementById('new-project-btn');
+    if (newProjectBtn) {
+      newProjectBtn.addEventListener('click', () => {
+        console.log('New project clicked');
+        if (confirm('Start a new project? All unsaved changes will be lost.')) {
+          this.clearCanvas();
+        }
+      });
+    }
+    
+    const helpBtn = document.getElementById('help-btn');
+    if (helpBtn) {
+      helpBtn.addEventListener('click', () => {
+        console.log('Help clicked');
+        // Simple help dialog
+        alert('DeckPro Designer Help:\n\n' +
+              '- Use the Rectangle tool to draw your deck outline\n' +
+              '- Enter dimensions directly in the Width and Length fields\n' +
+              '- Configure your deck in the sidebar panels\n' +
+              '- Click Generate Structure to create framing plan\n' +
+              '- View results in the Framing Details and Material Costs tabs');
+      });
     }
     
     // Undo/Redo buttons
@@ -70,6 +97,20 @@ class UIControls {
         if (confirm('Clear all deck geometry? This cannot be undone.')) {
           this.clearCanvas();
         }
+      });
+    }
+    
+    // Tool buttons
+    if (helpBtn) {
+      helpBtn.addEventListener('click', () => {
+        console.log('Help clicked');
+        // Simple help dialog
+        alert('DeckPro Designer Help:\n\n' +
+              '- Use the Rectangle tool to draw your deck outline\n' +
+              '- Enter dimensions directly in the Width and Length fields\n' +
+              '- Configure your deck in the sidebar panels\n' +
+              '- Click Generate Structure to create framing plan\n' +
+              '- View results in the Framing Details and Material Costs tabs');
       });
     }
     
@@ -158,8 +199,40 @@ class UIControls {
       }
     });
     
-    // Footprint inputs are now read-only
-    // They will be updated when the user draws a footprint
+    // Footprint dimension inputs
+    document.getElementById('width-ft').addEventListener('change', (e) => {
+      const width = parseFloat(e.target.value);
+      if (width >= 0) {
+        // If we have an existing footprint, update it
+        const state = this.store.getState();
+        if (state.footprint) {
+          const updatedFootprint = { ...state.footprint, width_ft: width };
+          this.executeCommand('setFootprint', { footprint: updatedFootprint });
+        } else {
+          // Create a new footprint with default position
+          const defaultPosition = this.createDefaultFootprint(width, 
+            parseFloat(document.getElementById('length-ft').value) || 12);
+          this.executeCommand('setFootprint', { footprint: defaultPosition });
+        }
+      }
+    });
+    
+    document.getElementById('length-ft').addEventListener('change', (e) => {
+      const length = parseFloat(e.target.value);
+      if (length >= 0) {
+        // If we have an existing footprint, update it
+        const state = this.store.getState();
+        if (state.footprint) {
+          const updatedFootprint = { ...state.footprint, length_ft: length };
+          this.executeCommand('setFootprint', { footprint: updatedFootprint });
+        } else {
+          // Create a new footprint with default position
+          const defaultPosition = this.createDefaultFootprint(
+            parseFloat(document.getElementById('width-ft').value) || 12, length);
+          this.executeCommand('setFootprint', { footprint: defaultPosition });
+        }
+      }
+    });
     
     // Context inputs
     document.getElementById('height-ft').addEventListener('change', (e) => {
@@ -624,6 +697,42 @@ class UIControls {
         });
       }
     });
+  }
+
+  /**
+   * Creates a footprint with default positioning centered in the visible canvas area
+   * @param {number} width_ft - Width in feet
+   * @param {number} length_ft - Length in feet
+   * @returns {Object} Footprint object with origin and dimensions
+   */
+  createDefaultFootprint(width_ft, length_ft) {
+    // Set default dimensions if not provided
+    width_ft = width_ft || 12;
+    length_ft = length_ft || 12;
+    
+    // Get the canvas to calculate a good default position
+    const canvas = document.getElementById('deck-canvas');
+    if (!canvas) return null;
+    
+    const rect = canvas.getBoundingClientRect();
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    
+    // Convert to world coordinates
+    const worldPos = this.drawingSurface.toWorldCoords(centerX, centerY);
+    const surface = this.drawingSurface;
+    
+    // Calculate origin to center the footprint
+    const origin = {
+      x: surface.pixelsToFeet(worldPos.x) - (width_ft / 2),
+      y: surface.pixelsToFeet(worldPos.y) - (length_ft / 2)
+    };
+    
+    return {
+      origin: origin,
+      width_ft: width_ft,
+      length_ft: length_ft
+    };
   }
 
   updateCostSummary() {

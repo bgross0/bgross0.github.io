@@ -104,12 +104,8 @@ class JoistLayer extends Layer {
       }
     }
     
-    // Draw joist size label
-    ctx.fillStyle = '#333333';
-    ctx.font = 'bold 14px Arial';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    ctx.fillText(`${size} @ ${spacing_in}" O.C.`, baseX + 10, baseY + 10);
+    // Removed joist size label from canvas to improve readability
+    // This information is still shown in the sidebar
     
     ctx.restore();
   }
@@ -128,14 +124,7 @@ class JoistLayer extends Layer {
       
       ctx.setLineDash([]);
       
-      // Draw cantilever label
-      ctx.fillStyle = '#333333';
-      ctx.font = '12px Arial';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      const labelX = baseX + deckWidthPx - beamPosition/2;
-      const labelY = baseY + deckLengthPx / 2;
-      ctx.fillText(`${cantilever_ft}' cantilever`, labelX, labelY);
+      // Removed cantilever label text to improve canvas readability
       
     } else {
       // Draw dashed line where beam would be (horizontal line for vertical joists)
@@ -144,18 +133,8 @@ class JoistLayer extends Layer {
       ctx.lineTo(baseX + deckWidthPx, baseY + deckLengthPx - beamPosition);
       ctx.stroke();
       
-      ctx.setLineDash([]);
-      
-      // Draw cantilever label
-      ctx.fillStyle = '#333333';
-      ctx.font = '12px Arial';
-      ctx.save();
-      ctx.translate(baseX + deckWidthPx / 2, baseY + deckLengthPx - beamPosition/2);
-      ctx.rotate(Math.PI / 2);
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(`${cantilever_ft}' cantilever`, 0, 0);
-      ctx.restore();
+      ctx.setLineDash([]); 
+      // No cantilever label - removed for better canvas readability
     }
   }
 }
