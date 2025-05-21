@@ -11,10 +11,14 @@
         <!-- Header -->
         <header class="app-header">
             <div class="header-content">
-                <h1 class="app-title">DeckPro Designer</h1>
+                <div>
+                    <h1 class="app-title">DeckPro</h1>
+                    <div class="subtitle">Deck Structure Calculator</div>
+                </div>
                 <div class="header-actions">
                     <button id="new-project-btn" title="New Project">New</button>
                     <button id="help-btn" title="Help">Help</button>
+                    <button id="toggle-sidebar-btn" class="mobile-only" title="Toggle Sidebar">⚙️</button>
                 </div>
             </div>
         </header>
@@ -71,7 +75,7 @@
             </div>
 
             <!-- Sidebar -->
-            <div class="sidebar">
+            <div class="sidebar" id="sidebar">
                 <!-- Tabs -->
                 <div class="tabs">
                     <button class="tab-button active" data-tab="properties">Deck Properties</button>
@@ -284,6 +288,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Copyright notice -->
+    <div class="copyright">© Benjamin Gross 2025</div>
 
     <!-- Load JavaScript -->
     <script src="js/utils/eventBus.js"></script>

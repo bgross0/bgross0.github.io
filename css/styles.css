@@ -20,7 +20,7 @@ html, body {
 
 /* Header */
 .app-header {
-    background: #2c3e50;
+    background: #2e7d32; /* Changed to a professional green shade */
     color: white;
     padding: 8px 15px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -33,46 +33,36 @@ html, body {
 }
 
 .app-title {
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 24px;
+    font-weight: 700;
     margin: 0;
-}
-
-.header-actions {
-    display: flex;
-    gap: 10px;
-}
-
-.header-actions button {
-    background-color: #3498db;
-    color: white;
-    border: none;
-    padding: 5px 12px;
-    border-radius: 3px;
-}
-
-.header-actions button:hover {
-    background-color: #2980b9;
-}
-
-/* Header */
-.app-header {
-    background: #2c3e50;
-    color: white;
-    padding: 8px 15px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.header-content {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    letter-spacing: 0.5px;
 }
 
-.app-title {
-    font-size: 18px;
-    font-weight: 600;
-    margin: 0;
+.app-title::before {
+    content: "🔨";  /* Hammer emoji - widely supported tool emoji */
+    margin-right: 10px;
+    font-size: 24px;
+}
+
+.subtitle {
+    font-size: 14px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.9);
+    margin-top: 3px;
+    letter-spacing: 0.3px;
+}
+
+/* Footer copyright */
+.copyright {
+    position: fixed;
+    bottom: 8px;
+    left: 10px;
+    font-size: 11px;
+    color: rgba(0, 0, 0, 0.5);
+    z-index: 100;
 }
 
 .header-actions {
@@ -81,7 +71,7 @@ html, body {
 }
 
 .header-actions button {
-    background-color: #3498db;
+    background-color: #1b5e20; /* Darker green for buttons */
     color: white;
     border: none;
     padding: 5px 12px;
@@ -89,7 +79,7 @@ html, body {
 }
 
 .header-actions button:hover {
-    background-color: #2980b9;
+    background-color: #388e3c; /* Lighter green on hover */
 }
 
 /* Top Bar */
@@ -432,6 +422,41 @@ fieldset select {
     margin-right: 8px;
 }
 
+/* Mobile-specific elements */
+.mobile-only {
+    display: none;
+}
+
+#toggle-sidebar-btn {
+    font-size: 20px;
+    padding: 5px 10px;
+    transition: all 0.3s ease;
+    position: relative;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+#toggle-sidebar-btn::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    width: 8px;
+    height: 8px;
+    background-color: #e74c3c;
+    border-radius: 50%;
+    opacity: 0.9;
+}
+
+#toggle-sidebar-btn.active {
+    transform: rotate(180deg);
+    background-color: #2980b9;
+    color: white;
+}
+
+#toggle-sidebar-btn.active::after {
+    background-color: white;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .app-header {
@@ -439,19 +464,55 @@ fieldset select {
     }
     
     .app-title {
-        font-size: 16px;
+        font-size: 20px;
+    }
+    
+    .subtitle {
+        font-size: 12px;
+    }
+    
+    .copyright {
+        font-size: 10px;
     }
     
     .main-content {
-        flex-direction: column;
+        flex-direction: row;
+    }
+    
+    .mobile-only {
+        display: block;
     }
     
     .sidebar {
-        width: 100%;
-        border-left: none;
-        border-top: 1px solid #ddd;
-        height: auto;
-        min-height: 50%;
+        width: 300px;
+        border-left: 1px solid #ddd;
+        height: 100%;
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        right: -300px;
+        z-index: 1000;
+        background: #f9f9f9;
+        transform: translateX(0);
+        transition: transform 0.3s ease;
+        overflow-y: auto;
+        padding-top: 50px; /* Space for header */
+    }
+    
+    .sidebar.visible {
+        transform: translateX(-300px);
+        box-shadow: -5px 0 15px rgba(0,0,0,0.2);
+    }
+    
+    .sidebar.visible::before {
+        content: 'Tap canvas to close';
+        display: block;
+        position: absolute;
+        top: 55px;
+        right: 15px;
+        font-size: 12px;
+        color: #666;
+        font-style: italic;
     }
     
     .top-bar {
@@ -465,7 +526,9 @@ fieldset select {
     }
     
     .canvas-container {
-        height: 50vh;
+        flex: 1;
+        height: calc(100vh - 120px);
+        width: 100%;
     }
     
     fieldset {

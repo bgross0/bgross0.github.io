@@ -92,7 +92,7 @@ class BeamLayer extends Layer {
     
     // Draw rim joists on the sides perpendicular to joists
     if (this.joistOrientation === 'width') {
-      // Joists run horizontally, so rim joists are vertical (at left and right)
+      // Joists run horizontally (span width), so rim joists are vertical (at left and right edges)
       // Left rim joist - inside the deck perimeter
       ctx.fillRect(baseX, baseY, rimJoistThickness, length);
       ctx.strokeRect(baseX, baseY, rimJoistThickness, length);
@@ -101,7 +101,7 @@ class BeamLayer extends Layer {
       ctx.fillRect(baseX + width - rimJoistThickness, baseY, rimJoistThickness, length);
       ctx.strokeRect(baseX + width - rimJoistThickness, baseY, rimJoistThickness, length);
     } else {
-      // Joists run vertically, so rim joists are horizontal (at top and bottom)
+      // Joists run vertically (span length), so rim joists are horizontal (at top and bottom edges)
       // Top rim joist - inside the deck perimeter
       ctx.fillRect(baseX, baseY, width, rimJoistThickness);
       ctx.strokeRect(baseX, baseY, width, rimJoistThickness);
@@ -178,25 +178,25 @@ class BeamLayer extends Layer {
     ctx.lineWidth = 1 / surface.zoom;
     
     if (this.joistOrientation === 'width') {
-      // Joists run horizontally, ledger is on top (inner position)
-      // Ledger should be inside the deck at the inner edge
-      ctx.fillRect(x, y, length, ledgerThickness);
-      ctx.strokeRect(x, y, length, ledgerThickness);
+      // Joists run horizontally (span width), ledger is on top (inner position)
+      // Ledger should match the width of the deck
+      ctx.fillRect(x, y, width, ledgerThickness);
+      ctx.strokeRect(x, y, width, ledgerThickness);
       
       // Draw attachment pattern
       ctx.strokeStyle = '#666';
       ctx.setLineDash([5 / surface.zoom, 5 / surface.zoom]);
       
       const spacing = surface.feetToPixels(2); // 2 ft spacing
-      for (let i = spacing; i < length; i += spacing) {
+      for (let i = spacing; i < width; i += spacing) {
         ctx.beginPath();
         ctx.moveTo(x + i, y);
         ctx.lineTo(x + i, y - ledgerThickness);
         ctx.stroke();
       }
     } else {
-      // Joists run vertically, ledger is on left (inner position)
-      // Ledger should be inside the deck at the inner edge
+      // Joists run vertically (span length), ledger is on left (inner position)
+      // Ledger should match the length of the deck
       ctx.fillRect(x, y, ledgerThickness, length);
       ctx.strokeRect(x, y, ledgerThickness, length);
       

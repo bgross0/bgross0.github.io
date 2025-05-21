@@ -1,5 +1,53 @@
 // Main application initialization
 document.addEventListener('DOMContentLoaded', () => {
+  // Detect mobile/touch devices and add class to body
+  function isTouchDevice() {
+    return ('ontouchstart' in window) ||
+      (navigator.maxTouchPoints > 0) ||
+      (navigator.msMaxTouchPoints > 0);
+  }
+  
+  // Array to track event listeners that need manual cleanup
+  const mainListeners = [];
+  
+  // Helper function to add and track event listeners
+  function addGlobalListener(element, eventType, handler) {
+    element.addEventListener(eventType, handler);
+    mainListeners.push({ element, eventType, handler });
+  }
+  
+  // Setup cleanup for page unload
+  window.addEventListener('beforeunload', () => {
+    console.log('Cleaning up global event listeners');
+    mainListeners.forEach(({ element, eventType, handler }) => {
+      element.removeEventListener(eventType, handler);
+    });
+    
+    // Also trigger cleanup in UIControls
+    if (window.uiControls) {
+      window.uiControls.cleanupEventListeners();
+    }
+  });
+  
+  if (isTouchDevice()) {
+    document.body.classList.add('touch-device');
+    
+    // Add event listener to close sidebar when clicking on canvas on mobile
+    const canvas = document.getElementById('deck-canvas');
+    const sidebar = document.getElementById('sidebar');
+    const toggleBtn = document.getElementById('toggle-sidebar-btn');
+    
+    if (canvas && sidebar) {
+      const handler = () => {
+        if (sidebar.classList.contains('visible')) {
+          sidebar.classList.remove('visible');
+          if (toggleBtn) toggleBtn.classList.remove('active');
+        }
+      };
+      addGlobalListener(canvas, 'click', handler);
+    }
+  }
+  
   // Initialize store with default state
   const store = createStore({
     footprint: null,

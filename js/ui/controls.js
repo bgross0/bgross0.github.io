@@ -21,9 +21,42 @@ window.UIControls = class UIControls {
     }
   }
   
+  // Property to store all event listeners for easy cleanup
+  listeners = [];
+  
+  // Helper method to add event listeners and track them for cleanup
+  addListener(element, eventType, handler) {
+    element.addEventListener(eventType, handler);
+    this.listeners.push({ element, eventType, handler });
+  }
+  
+  // Cleanup all registered event listeners
+  cleanupEventListeners() {
+    console.log(`Cleaning up ${this.listeners.length} event listeners`);
+    this.listeners.forEach(({ element, eventType, handler }) => {
+      element.removeEventListener(eventType, handler);
+    });
+    this.listeners = [];
+  }
+  
   setupEventListeners() {
     console.log('Setting up event listeners');
+    this.verifyElements();
+    this.setupHeaderControls();
+    this.setupMainControls();
+    this.setupToolButtons();
+    this.setupGridControls();
+    this.setupViewControls();
+    this.setupFootprintInputs();
+    this.setupContextInputs();
+    this.setupKeyboardShortcuts();
+    this.setupTabSwitching();
     
+    // Add window unload handler to clean up event listeners
+    window.addEventListener('beforeunload', () => this.cleanupEventListeners());
+  }
+  
+  verifyElements() {
     // Verify elements exist
     const elements = {
       'undo-btn': 'Undo',
@@ -33,7 +66,8 @@ window.UIControls = class UIControls {
       'select-tool-btn': 'Select Tool',
       'generate-btn': 'Generate',
       'new-project-btn': 'New Project',
-      'help-btn': 'Help'
+      'help-btn': 'Help',
+      'toggle-sidebar-btn': 'Toggle Sidebar'
     };
     
     for (const [id, name] of Object.entries(elements)) {
@@ -44,21 +78,24 @@ window.UIControls = class UIControls {
         console.log(`${name} button found: #${id}`);
       }
     }
-    
+  }
+  
+  setupHeaderControls() {
     // Header buttons
     const newProjectBtn = document.getElementById('new-project-btn');
     if (newProjectBtn) {
-      newProjectBtn.addEventListener('click', () => {
+      const handler = () => {
         console.log('New project clicked');
         if (confirm('Start a new project? All unsaved changes will be lost.')) {
           this.clearCanvas();
         }
-      });
+      };
+      this.addListener(newProjectBtn, 'click', handler);
     }
     
     const helpBtn = document.getElementById('help-btn');
     if (helpBtn) {
-      helpBtn.addEventListener('click', () => {
+      const handler = () => {
         console.log('Help clicked');
         // Simple help dialog
         alert('DeckPro Designer Help:\n\n' +
@@ -67,185 +104,243 @@ window.UIControls = class UIControls {
               '- Configure your deck in the sidebar panels\n' +
               '- Click Generate Structure to create framing plan\n' +
               '- View results in the Framing Details and Material Costs tabs');
-      });
+      };
+      this.addListener(helpBtn, 'click', handler);
     }
     
+    const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
+    if (toggleSidebarBtn) {
+      const handler = () => {
+        console.log('Toggle sidebar clicked');
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) {
+          sidebar.classList.toggle('visible');
+          toggleSidebarBtn.classList.toggle('active');
+        }
+      };
+      this.addListener(toggleSidebarBtn, 'click', handler);
+    }
+  }
+  
+  setupMainControls() {
     // Undo/Redo buttons
     const undoBtn = document.getElementById('undo-btn');
     if (undoBtn) {
-      undoBtn.addEventListener('click', () => {
+      const handler = () => {
         console.log('Undo clicked');
         this.commandStack.undo();
         this.updateUIFromState();
-      });
+      };
+      this.addListener(undoBtn, 'click', handler);
     }
     
     const redoBtn = document.getElementById('redo-btn');
     if (redoBtn) {
-      redoBtn.addEventListener('click', () => {
+      const handler = () => {
         console.log('Redo clicked');
         this.commandStack.redo();
         this.updateUIFromState();
-      });
+      };
+      this.addListener(redoBtn, 'click', handler);
     }
     
     // Clear canvas button
     const clearBtn = document.getElementById('clear-canvas-btn');
     if (clearBtn) {
-      clearBtn.addEventListener('click', () => {
+      const handler = () => {
         console.log('Clear canvas clicked');
         if (confirm('Clear all deck geometry? This cannot be undone.')) {
           this.clearCanvas();
         }
-      });
+      };
+      this.addListener(clearBtn, 'click', handler);
     }
-    
-    // Tool buttons
-    if (helpBtn) {
-      helpBtn.addEventListener('click', () => {
-        console.log('Help clicked');
-        // Simple help dialog
-        alert('DeckPro Designer Help:\n\n' +
-              '- Use the Rectangle tool to draw your deck outline\n' +
-              '- Enter dimensions directly in the Width and Length fields\n' +
-              '- Configure your deck in the sidebar panels\n' +
-              '- Click Generate Structure to create framing plan\n' +
-              '- View results in the Framing Details and Material Costs tabs');
-      });
-    }
-    
+  }
+  
+  setupToolButtons() {
     // Tool buttons
     const rectangleBtn = document.getElementById('rectangle-tool-btn');
     if (rectangleBtn) {
-      rectangleBtn.addEventListener('click', () => {
+      const handler = () => {
         console.log('Rectangle tool clicked');
         this.setActiveTool('rectangle');
-      });
+      };
+      this.addListener(rectangleBtn, 'click', handler);
     }
     
     const selectBtn = document.getElementById('select-tool-btn');
     if (selectBtn) {
-      selectBtn.addEventListener('click', () => {
+      const handler = () => {
         console.log('Select tool clicked');
         this.setActiveTool('select');
-      });
+      };
+      this.addListener(selectBtn, 'click', handler);
     }
     
     // Generate button
     const generateBtn = document.getElementById('generate-btn');
     if (generateBtn) {
-      generateBtn.addEventListener('click', () => {
+      const handler = () => {
         console.log('Generate button clicked');
         this.generateStructure();
-      });
+      };
+      this.addListener(generateBtn, 'click', handler);
     } else {
       console.error('Generate button not found!');
     }
-    
+  }
+  
+  setupGridControls() {
     // Grid controls
-    document.getElementById('grid-visible').addEventListener('change', (e) => {
-      const gridLayer = this.drawingSurface.layers.find(l => l.id === 'grid');
-      if (gridLayer) {
-        gridLayer.visible = e.target.checked;
-        this.drawingSurface.draw();
-        eventBus.emit('canvas:gridChange', {
-          visible: gridLayer.visible,
-          snap: gridLayer.snap,
-          spacing_in: gridLayer.spacing_in
-        });
-      }
-    });
+    const gridVisibleEl = document.getElementById('grid-visible');
+    if (gridVisibleEl) {
+      const handler = (e) => {
+        const gridLayer = this.drawingSurface.layers.find(l => l.id === 'grid');
+        if (gridLayer) {
+          gridLayer.visible = e.target.checked;
+          this.drawingSurface.draw();
+          eventBus.emit('canvas:gridChange', {
+            visible: gridLayer.visible,
+            snap: gridLayer.snap,
+            spacing_in: gridLayer.spacing_in
+          });
+        }
+      };
+      this.addListener(gridVisibleEl, 'change', handler);
+    }
     
-    document.getElementById('grid-snap').addEventListener('change', (e) => {
-      const gridLayer = this.drawingSurface.layers.find(l => l.id === 'grid');
-      if (gridLayer) {
-        gridLayer.setSnap(e.target.checked);
-        eventBus.emit('canvas:gridChange', {
-          visible: gridLayer.visible,
-          snap: gridLayer.snap,
-          spacing_in: gridLayer.spacing_in
-        });
-      }
-    });
+    const gridSnapEl = document.getElementById('grid-snap');
+    if (gridSnapEl) {
+      const handler = (e) => {
+        const gridLayer = this.drawingSurface.layers.find(l => l.id === 'grid');
+        if (gridLayer) {
+          gridLayer.setSnap(e.target.checked);
+          eventBus.emit('canvas:gridChange', {
+            visible: gridLayer.visible,
+            snap: gridLayer.snap,
+            spacing_in: gridLayer.spacing_in
+          });
+        }
+      };
+      this.addListener(gridSnapEl, 'change', handler);
+    }
     
-    document.getElementById('grid-spacing').addEventListener('change', (e) => {
-      const gridLayer = this.drawingSurface.layers.find(l => l.id === 'grid');
-      if (gridLayer) {
-        gridLayer.setSpacing(parseFloat(e.target.value));
-        eventBus.emit('canvas:gridChange', {
-          visible: gridLayer.visible,
-          snap: gridLayer.snap,
-          spacing_in: gridLayer.spacing_in
-        });
-      }
-    });
-    
+    const gridSpacingEl = document.getElementById('grid-spacing');
+    if (gridSpacingEl) {
+      const handler = (e) => {
+        const gridLayer = this.drawingSurface.layers.find(l => l.id === 'grid');
+        if (gridLayer) {
+          gridLayer.setSpacing(parseFloat(e.target.value));
+          eventBus.emit('canvas:gridChange', {
+            visible: gridLayer.visible,
+            snap: gridLayer.snap,
+            spacing_in: gridLayer.spacing_in
+          });
+        }
+      };
+      this.addListener(gridSpacingEl, 'change', handler);
+    }
+  }
+  
+  setupViewControls() {
     // Zoom controls
-    document.getElementById('zoom-in-btn').addEventListener('click', () => {
-      this.drawingSurface.zoom = Math.min(8, this.drawingSurface.zoom * 1.2);
-      this.drawingSurface.draw();
-    });
+    const zoomInBtn = document.getElementById('zoom-in-btn');
+    if (zoomInBtn) {
+      const handler = () => {
+        this.drawingSurface.zoom = Math.min(8, this.drawingSurface.zoom * 1.2);
+        this.drawingSurface.draw();
+      };
+      this.addListener(zoomInBtn, 'click', handler);
+    }
     
-    document.getElementById('zoom-out-btn').addEventListener('click', () => {
-      this.drawingSurface.zoom = Math.max(0.25, this.drawingSurface.zoom / 1.2);
-      this.drawingSurface.draw();
-    });
+    const zoomOutBtn = document.getElementById('zoom-out-btn');
+    if (zoomOutBtn) {
+      const handler = () => {
+        this.drawingSurface.zoom = Math.max(0.25, this.drawingSurface.zoom / 1.2);
+        this.drawingSurface.draw();
+      };
+      this.addListener(zoomOutBtn, 'click', handler);
+    }
     
     // Export menu
-    document.getElementById('export-menu').addEventListener('change', (e) => {
-      if (e.target.value) {
-        eventBus.emit('canvas:export', { format: e.target.value });
-        e.target.value = ''; // Reset selection
-      }
-    });
-    
+    const exportMenuEl = document.getElementById('export-menu');
+    if (exportMenuEl) {
+      const handler = (e) => {
+        if (e.target.value) {
+          eventBus.emit('canvas:export', { format: e.target.value });
+          e.target.value = ''; // Reset selection
+        }
+      };
+      this.addListener(exportMenuEl, 'change', handler);
+    }
+  }
+  
+  setupFootprintInputs() {
     // Footprint dimension inputs
-    document.getElementById('width-ft').addEventListener('change', (e) => {
-      const width = parseFloat(e.target.value);
-      if (width >= 0) {
-        // If we have an existing footprint, update it
-        const state = this.store.getState();
-        if (state.footprint) {
-          const updatedFootprint = { ...state.footprint, width_ft: width };
-          this.executeCommand('setFootprint', { footprint: updatedFootprint });
-        } else {
-          // Create a new footprint with default position
-          const defaultPosition = this.createDefaultFootprint(width, 
-            parseFloat(document.getElementById('length-ft').value) || 12);
-          this.executeCommand('setFootprint', { footprint: defaultPosition });
+    const widthFtEl = document.getElementById('width-ft');
+    if (widthFtEl) {
+      const handler = (e) => {
+        const width = parseFloat(e.target.value);
+        if (width >= 0) {
+          // If we have an existing footprint, update it
+          const state = this.store.getState();
+          if (state.footprint) {
+            const updatedFootprint = { ...state.footprint, width_ft: width };
+            this.executeCommand('setFootprint', { footprint: updatedFootprint });
+          } else {
+            // Create a new footprint with default position
+            const defaultPosition = this.createDefaultFootprint(width, 
+              parseFloat(document.getElementById('length-ft').value) || 12);
+            this.executeCommand('setFootprint', { footprint: defaultPosition });
+          }
         }
-      }
-    });
+      };
+      this.addListener(widthFtEl, 'change', handler);
+    }
     
-    document.getElementById('length-ft').addEventListener('change', (e) => {
-      const length = parseFloat(e.target.value);
-      if (length >= 0) {
-        // If we have an existing footprint, update it
-        const state = this.store.getState();
-        if (state.footprint) {
-          const updatedFootprint = { ...state.footprint, length_ft: length };
-          this.executeCommand('setFootprint', { footprint: updatedFootprint });
-        } else {
-          // Create a new footprint with default position
-          const defaultPosition = this.createDefaultFootprint(
-            parseFloat(document.getElementById('width-ft').value) || 12, length);
-          this.executeCommand('setFootprint', { footprint: defaultPosition });
+    const lengthFtEl = document.getElementById('length-ft');
+    if (lengthFtEl) {
+      const handler = (e) => {
+        const length = parseFloat(e.target.value);
+        if (length >= 0) {
+          // If we have an existing footprint, update it
+          const state = this.store.getState();
+          if (state.footprint) {
+            const updatedFootprint = { ...state.footprint, length_ft: length };
+            this.executeCommand('setFootprint', { footprint: updatedFootprint });
+          } else {
+            // Create a new footprint with default position
+            const defaultPosition = this.createDefaultFootprint(
+              parseFloat(document.getElementById('width-ft').value) || 12, length);
+            this.executeCommand('setFootprint', { footprint: defaultPosition });
+          }
         }
-      }
-    });
-    
+      };
+      this.addListener(lengthFtEl, 'change', handler);
+    }
+  }
+  
+  setupContextInputs() {
     // Context inputs
-    document.getElementById('height-ft').addEventListener('change', (e) => {
-      const height = parseFloat(e.target.value);
-      if (height >= 0) {
-        this.executeCommand('setContext', { height_ft: height });
-      }
-    });
+    const heightFtEl = document.getElementById('height-ft');
+    if (heightFtEl) {
+      const handler = (e) => {
+        const height = parseFloat(e.target.value);
+        if (height >= 0) {
+          this.executeCommand('setContext', { height_ft: height });
+        }
+      };
+      this.addListener(heightFtEl, 'change', handler);
+    }
     
-    document.getElementById('attachment').addEventListener('change', (e) => {
-      this.executeCommand('setContext', { attachment: e.target.value });
-      this.updateUIVisibility();
-    });
+    const attachmentEl = document.getElementById('attachment');
+    if (attachmentEl) {
+      const handler = (e) => {
+        this.executeCommand('setContext', { attachment: e.target.value });
+        this.updateUIVisibility();
+      };
+      this.addListener(attachmentEl, 'change', handler);
+    }
     
     // Other context inputs
     const contextInputs = [
@@ -254,15 +349,21 @@ window.UIControls = class UIControls {
     ];
     
     contextInputs.forEach(id => {
-      document.getElementById(id).addEventListener('change', (e) => {
-        const key = id.replace(/-/g, '_');
-        const value = e.target.value || null;
-        this.executeCommand('setContext', { [key]: value });
-      });
+      const element = document.getElementById(id);
+      if (element) {
+        const handler = (e) => {
+          const key = id.replace(/-/g, '_');
+          const value = e.target.value || null;
+          this.executeCommand('setContext', { [key]: value });
+        };
+        this.addListener(element, 'change', handler);
+      }
     });
-    
+  }
+  
+  setupKeyboardShortcuts() {
     // Keyboard shortcuts
-    document.addEventListener('keydown', (e) => {
+    const handler = (e) => {
       if (e.ctrlKey || e.metaKey) {
         if (e.key === 'z') {
           e.preventDefault();
@@ -295,12 +396,15 @@ window.UIControls = class UIControls {
             break;
         }
       }
-    });
-
+    };
+    this.addListener(document, 'keydown', handler);
+  }
+  
+  setupTabSwitching() {
     // Tab switching
     const tabButtons = document.querySelectorAll('.tab-button');
     tabButtons.forEach(button => {
-      button.addEventListener('click', () => {
+      const handler = () => {
         const targetTab = button.dataset.tab;
         
         // Update button states
@@ -312,7 +416,8 @@ window.UIControls = class UIControls {
           panel.classList.remove('active');
         });
         document.getElementById(`${targetTab}-tab`).classList.add('active');
-      });
+      };
+      this.addListener(button, 'click', handler);
     });
   }
   
@@ -643,7 +748,7 @@ window.UIControls = class UIControls {
 
   setupMaterialCostListeners() {
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => this.setupMaterialCostListeners());
+      this.addListener(document, 'DOMContentLoaded', () => this.setupMaterialCostListeners());
       return;
     }
 
@@ -652,11 +757,12 @@ window.UIControls = class UIControls {
     lumberCosts.forEach(size => {
       const input = document.getElementById(`cost-${size}`);
       if (input) {
-        input.addEventListener('change', (e) => {
+        const handler = (e) => {
           const value = parseFloat(e.target.value) || 0;
           materials.lumber[size].costPerFoot = value;
           this.updateCostSummary();
-        });
+        };
+        this.addListener(input, 'change', handler);
       }
     });
 
@@ -671,7 +777,7 @@ window.UIControls = class UIControls {
     Object.entries(hardwareCosts).forEach(([id, key]) => {
       const input = document.getElementById(`cost-${id}`);
       if (input) {
-        input.addEventListener('change', (e) => {
+        const handler = (e) => {
           const value = parseFloat(e.target.value) || 0;
           materials.hardware[key].cost = value;
           // Update all joist hanger sizes
@@ -681,7 +787,8 @@ window.UIControls = class UIControls {
             });
           }
           this.updateCostSummary();
-        });
+        };
+        this.addListener(input, 'change', handler);
       }
     });
 
@@ -690,11 +797,12 @@ window.UIControls = class UIControls {
     footingTypes.forEach(type => {
       const input = document.getElementById(`cost-${type}`);
       if (input) {
-        input.addEventListener('change', (e) => {
+        const handler = (e) => {
           const value = parseFloat(e.target.value) || 0;
           materials.footingCosts[type] = value;
           this.updateCostSummary();
-        });
+        };
+        this.addListener(input, 'change', handler);
       }
     });
   }
@@ -749,33 +857,33 @@ window.UIControls = class UIControls {
       state.engineOut.material_takeoff.forEach(item => {
         // Qty is always just a number in our takeoff
         const amount = parseInt(item.qty) || 0;
-      
-      // Determine cost based on item type
-      let itemCost = 0;
-      if (item.item.includes('2x') || item.item.includes('6x6')) {
-        // Lumber - extract size
-        const sizeMatch = item.item.match(/([26])x(\d+)/);
-        if (sizeMatch) {
-          const size = sizeMatch[0];
-          if (materials.lumber[size]) {
-            itemCost = amount * materials.lumber[size].costPerFoot;
-            breakdown[size] = (breakdown[size] || 0) + itemCost;
+        
+        // Determine cost based on item type
+        let itemCost = 0;
+        if (item.item.includes('2x') || item.item.includes('6x6')) {
+          // Lumber - extract size
+          const sizeMatch = item.item.match(/([26])x(\d+)/);
+          if (sizeMatch) {
+            const size = sizeMatch[0];
+            if (materials.lumber[size]) {
+              itemCost = amount * materials.lumber[size].costPerFoot;
+              breakdown[size] = (breakdown[size] || 0) + itemCost;
+            }
           }
+        } else if (item.item.includes('hanger')) {
+          itemCost = amount * materials.hardware.LUS2x8.cost; // Use generic hanger cost
+          breakdown['hangers'] = (breakdown['hangers'] || 0) + itemCost;
+        } else if (item.item.includes('post base')) {
+          itemCost = amount * materials.hardware.PB66.cost;
+          breakdown['post_bases'] = (breakdown['post_bases'] || 0) + itemCost;
+        } else if (item.item.includes('pile') || item.item.includes('footing')) {
+          const footingType = state.context.footing_type;
+          itemCost = amount * materials.footingCosts[footingType];
+          breakdown['footings'] = (breakdown['footings'] || 0) + itemCost;
         }
-      } else if (item.item.includes('hanger')) {
-        itemCost = amount * materials.hardware.LUS2x8.cost; // Use generic hanger cost
-        breakdown['hangers'] = (breakdown['hangers'] || 0) + itemCost;
-      } else if (item.item.includes('post base')) {
-        itemCost = amount * materials.hardware.PB66.cost;
-        breakdown['post_bases'] = (breakdown['post_bases'] || 0) + itemCost;
-      } else if (item.item.includes('pile') || item.item.includes('footing')) {
-        const footingType = state.context.footing_type;
-        itemCost = amount * materials.footingCosts[footingType];
-        breakdown['footings'] = (breakdown['footings'] || 0) + itemCost;
-      }
-      
-      totalCost += itemCost;
-    });
+        
+        totalCost += itemCost;
+      });
 
     // Update the cost summary display
     const summaryDiv = document.getElementById('cost-summary');
