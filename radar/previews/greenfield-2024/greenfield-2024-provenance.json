@@ -1,0 +1,292 @@
+{
+  "status": "REAL_NOAA_MRMS_GRIB2_ANIMATED",
+  "synthetic_data_used": false,
+  "source_bucket": "noaa-mrms-pds",
+  "product": "ReflectivityAtLowestAltitude",
+  "physical_units": "dBZ",
+  "event": "2024_greenfield",
+  "actual_scans": [
+    {
+      "utc": "2024-05-21T20:16:42+00:00",
+      "url_and_sha256": "https://noaa-mrms-pds.s3.amazonaws.com/CONUS/ReflectivityAtLowestAltitude_00.50/20240521/MRMS_ReflectivityAtLowestAltitude_00.50_20240521-201642.grib2.gz#sha256=631d7d9c0d072b7a5dd9f3ed2615d4ce251f604af135213cf7c37e56aa9039d8"
+    },
+    {
+      "utc": "2024-05-21T20:18:41+00:00",
+      "url_and_sha256": "https://noaa-mrms-pds.s3.amazonaws.com/CONUS/ReflectivityAtLowestAltitude_00.50/20240521/MRMS_ReflectivityAtLowestAltitude_00.50_20240521-201841.grib2.gz#sha256=78ed56959b189a9b3a0666fb594ead658f0c3634e9073bdfa3068415849fc667"
+    },
+    {
+      "utc": "2024-05-21T20:20:39+00:00",
+      "url_and_sha256": "https://noaa-mrms-pds.s3.amazonaws.com/CONUS/ReflectivityAtLowestAltitude_00.50/20240521/MRMS_ReflectivityAtLowestAltitude_00.50_20240521-202039.grib2.gz#sha256=3872a0c49f4a873dd3f335f518593bef4b24bda42a04c437c9fe1466fdff997a"
+    },
+    {
+      "utc": "2024-05-21T20:22:41+00:00",
+      "url_and_sha256": "https://noaa-mrms-pds.s3.amazonaws.com/CONUS/ReflectivityAtLowestAltitude_00.50/20240521/MRMS_ReflectivityAtLowestAltitude_00.50_20240521-202241.grib2.gz#sha256=5fdb07c434cdaacae129098a3a44d73fa1cfee09d5000819d085856f6d68cb0d"
+    },
+    {
+      "utc": "2024-05-21T20:24:42+00:00",
+      "url_and_sha256": "https://noaa-mrms-pds.s3.amazonaws.com/CONUS/ReflectivityAtLowestAltitude_00.50/20240521/MRMS_ReflectivityAtLowestAltitude_00.50_20240521-202442.grib2.gz#sha256=1ccda5581cfab80658ea874e3e0d82a3c5cd93f65e1138c32e496cc8bf29ddd1"
+    },
+    {
+      "utc": "2024-05-21T20:26:42+00:00",
+      "url_and_sha256": "https://noaa-mrms-pds.s3.amazonaws.com/CONUS/ReflectivityAtLowestAltitude_00.50/20240521/MRMS_ReflectivityAtLowestAltitude_00.50_20240521-202642.grib2.gz#sha256=67ea19686945893a6e2b69372836646c1970d3346b2691f6182cd3bc19e5eda0"
+    },
+    {
+      "utc": "2024-05-21T20:28:39+00:00",
+      "url_and_sha256": "https://noaa-mrms-pds.s3.amazonaws.com/CONUS/ReflectivityAtLowestAltitude_00.50/20240521/MRMS_ReflectivityAtLowestAltitude_00.50_20240521-202839.grib2.gz#sha256=4244af051dc598dadef8d5abef97bbe7c8f1418aea4bdf4ef35de4a358ee71ab"
+    }
+  ],
+  "roi_wsen": [
+    -95.5,
+    40.5,
+    -92.5,
+    43.0
+  ],
+  "evaluation_mode": "visual playback, not new heldout skill benchmark",
+  "frame_interval_seconds": 30,
+  "observed_label": "Original NOAA sample; held between scans in observed panel",
+  "estimated_label": "Interpolated intermediate time from two real NOAA scans",
+  "methods": [
+    "observed-stepped",
+    "crossfade-dbz",
+    "official-pysteps-LK-motion"
+  ],
+  "frames": [
+    {
+      "utc": "2024-05-21T20:16:42+00:00",
+      "kind": "observed",
+      "bracketing_noaa_scans_utc": [
+        "2024-05-21T20:16:42+00:00",
+        "2024-05-21T20:18:41+00:00"
+      ],
+      "fraction": 0.0
+    },
+    {
+      "utc": "2024-05-21T20:17:11.750000+00:00",
+      "kind": "interpolated",
+      "bracketing_noaa_scans_utc": [
+        "2024-05-21T20:16:42+00:00",
+        "2024-05-21T20:18:41+00:00"
+      ],
+      "fraction": 0.25
+    },
+    {
+      "utc": "2024-05-21T20:17:41.500000+00:00",
+      "kind": "interpolated",
+      "bracketing_noaa_scans_utc": [
+        "2024-05-21T20:16:42+00:00",
+        "2024-05-21T20:18:41+00:00"
+      ],
+      "fraction": 0.5
+    },
+    {
+      "utc": "2024-05-21T20:18:11.250000+00:00",
+      "kind": "interpolated",
+      "bracketing_noaa_scans_utc": [
+        "2024-05-21T20:16:42+00:00",
+        "2024-05-21T20:18:41+00:00"
+      ],
+      "fraction": 0.75
+    },
+    {
+      "utc": "2024-05-21T20:18:41+00:00",
+      "kind": "observed",
+      "bracketing_noaa_scans_utc": [
+        "2024-05-21T20:18:41+00:00",
+        "2024-05-21T20:20:39+00:00"
+      ],
+      "fraction": 0.0
+    },
+    {
+      "utc": "2024-05-21T20:19:10.500000+00:00",
+      "kind": "interpolated",
+      "bracketing_noaa_scans_utc": [
+        "2024-05-21T20:18:41+00:00",
+        "2024-05-21T20:20:39+00:00"
+      ],
+      "fraction": 0.25
+    },
+    {
+      "utc": "2024-05-21T20:19:40+00:00",
+      "kind": "interpolated",
+      "bracketing_noaa_scans_utc": [
+        "2024-05-21T20:18:41+00:00",
+        "2024-05-21T20:20:39+00:00"
+      ],
+      "fraction": 0.5
+    },
+    {
+      "utc": "2024-05-21T20:20:09.500000+00:00",
+      "kind": "interpolated",
+      "bracketing_noaa_scans_utc": [
+        "2024-05-21T20:18:41+00:00",
+        "2024-05-21T20:20:39+00:00"
+      ],
+      "fraction": 0.75
+    },
+    {
+      "utc": "2024-05-21T20:20:39+00:00",
+      "kind": "observed",
+      "bracketing_noaa_scans_utc": [
+        "2024-05-21T20:20:39+00:00",
+        "2024-05-21T20:22:41+00:00"
+      ],
+      "fraction": 0.0
+    },
+    {
+      "utc": "2024-05-21T20:21:09.500000+00:00",
+      "kind": "interpolated",
+      "bracketing_noaa_scans_utc": [
+        "2024-05-21T20:20:39+00:00",
+        "2024-05-21T20:22:41+00:00"
+      ],
+      "fraction": 0.25
+    },
+    {
+      "utc": "2024-05-21T20:21:40+00:00",
+      "kind": "interpolated",
+      "bracketing_noaa_scans_utc": [
+        "2024-05-21T20:20:39+00:00",
+        "2024-05-21T20:22:41+00:00"
+      ],
+      "fraction": 0.5
+    },
+    {
+      "utc": "2024-05-21T20:22:10.500000+00:00",
+      "kind": "interpolated",
+      "bracketing_noaa_scans_utc": [
+        "2024-05-21T20:20:39+00:00",
+        "2024-05-21T20:22:41+00:00"
+      ],
+      "fraction": 0.75
+    },
+    {
+      "utc": "2024-05-21T20:22:41+00:00",
+      "kind": "observed",
+      "bracketing_noaa_scans_utc": [
+        "2024-05-21T20:22:41+00:00",
+        "2024-05-21T20:24:42+00:00"
+      ],
+      "fraction": 0.0
+    },
+    {
+      "utc": "2024-05-21T20:23:11.250000+00:00",
+      "kind": "interpolated",
+      "bracketing_noaa_scans_utc": [
+        "2024-05-21T20:22:41+00:00",
+        "2024-05-21T20:24:42+00:00"
+      ],
+      "fraction": 0.25
+    },
+    {
+      "utc": "2024-05-21T20:23:41.500000+00:00",
+      "kind": "interpolated",
+      "bracketing_noaa_scans_utc": [
+        "2024-05-21T20:22:41+00:00",
+        "2024-05-21T20:24:42+00:00"
+      ],
+      "fraction": 0.5
+    },
+    {
+      "utc": "2024-05-21T20:24:11.750000+00:00",
+      "kind": "interpolated",
+      "bracketing_noaa_scans_utc": [
+        "2024-05-21T20:22:41+00:00",
+        "2024-05-21T20:24:42+00:00"
+      ],
+      "fraction": 0.75
+    },
+    {
+      "utc": "2024-05-21T20:24:42+00:00",
+      "kind": "observed",
+      "bracketing_noaa_scans_utc": [
+        "2024-05-21T20:24:42+00:00",
+        "2024-05-21T20:26:42+00:00"
+      ],
+      "fraction": 0.0
+    },
+    {
+      "utc": "2024-05-21T20:25:12+00:00",
+      "kind": "interpolated",
+      "bracketing_noaa_scans_utc": [
+        "2024-05-21T20:24:42+00:00",
+        "2024-05-21T20:26:42+00:00"
+      ],
+      "fraction": 0.25
+    },
+    {
+      "utc": "2024-05-21T20:25:42+00:00",
+      "kind": "interpolated",
+      "bracketing_noaa_scans_utc": [
+        "2024-05-21T20:24:42+00:00",
+        "2024-05-21T20:26:42+00:00"
+      ],
+      "fraction": 0.5
+    },
+    {
+      "utc": "2024-05-21T20:26:12+00:00",
+      "kind": "interpolated",
+      "bracketing_noaa_scans_utc": [
+        "2024-05-21T20:24:42+00:00",
+        "2024-05-21T20:26:42+00:00"
+      ],
+      "fraction": 0.75
+    },
+    {
+      "utc": "2024-05-21T20:26:42+00:00",
+      "kind": "observed",
+      "bracketing_noaa_scans_utc": [
+        "2024-05-21T20:26:42+00:00",
+        "2024-05-21T20:28:39+00:00"
+      ],
+      "fraction": 0.0
+    },
+    {
+      "utc": "2024-05-21T20:27:11.250000+00:00",
+      "kind": "interpolated",
+      "bracketing_noaa_scans_utc": [
+        "2024-05-21T20:26:42+00:00",
+        "2024-05-21T20:28:39+00:00"
+      ],
+      "fraction": 0.25
+    },
+    {
+      "utc": "2024-05-21T20:27:40.500000+00:00",
+      "kind": "interpolated",
+      "bracketing_noaa_scans_utc": [
+        "2024-05-21T20:26:42+00:00",
+        "2024-05-21T20:28:39+00:00"
+      ],
+      "fraction": 0.5
+    },
+    {
+      "utc": "2024-05-21T20:28:09.750000+00:00",
+      "kind": "interpolated",
+      "bracketing_noaa_scans_utc": [
+        "2024-05-21T20:26:42+00:00",
+        "2024-05-21T20:28:39+00:00"
+      ],
+      "fraction": 0.75
+    },
+    {
+      "utc": "2024-05-21T20:28:39+00:00",
+      "kind": "observed",
+      "bracketing_noaa_scans_utc": [
+        "2024-05-21T20:28:39+00:00"
+      ],
+      "fraction": 0.0
+    }
+  ],
+  "observed_count": 7,
+  "generated_frame_count": 25,
+  "estimated_count": 18,
+  "gif": {
+    "path": "2024_greenfield_real_noaa_mrms.gif",
+    "sha256": "244a2b4b4aaf61b1415b9ecff60a8a8b131619efc1ec68c534225fb39eef4e8a",
+    "bytes": 956185
+  },
+  "mp4": {
+    "path": "2024_greenfield_real_noaa_mrms.mp4",
+    "sha256": "017dac627d169b8a1f7d1286a829fcb7bcaaede88d84e8e9868525bd520c9abb",
+    "bytes": 1345275
+  }
+}
